@@ -1,7 +1,9 @@
+from api.types import LightState, PlugState
+from .hue import getNormalizedLights as getHueLights, getNormalizedLight as getHueLight, setLightStateNormalized as setHueLightState, getNormalizedPlugs as getHuePlugs, getNormalizedPlug as getHuePlug
 import json
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from .hue import getNormalizedLights as getHueLights, getNormalizedLight as getHueLight, setLightStateNormalized as setHueLightState, getNormalizedPlugs as getHuePlugs, getNormalizedPlug as getHuePlug
+
 
 router = APIRouter(
     prefix="",
@@ -43,7 +45,7 @@ def getPlug(id: str):
         return None
 
 
-def setLightState(id: str, state: dict):
+def setLightState(id: str, state: LightState):
     try:
         if id.startswith("hue-"):
             return setHueLightState(int(id.replace("hue-", "")), state)
@@ -52,7 +54,7 @@ def setLightState(id: str, state: dict):
         return JSONResponse(status_code=404, content={"error": "Light not found"})
 
 
-def setPlugState(id: str, state: dict):
+def setPlugState(id: str, state: PlugState):
     try:
         if id.startswith("hue-"):
             return setHueLightState(int(id.replace("hue-", "")), state)
@@ -92,7 +94,7 @@ def get_light(id: str):
 
 
 @router.put("/lights/{id}/state")
-def set_light_state(id: str, state: dict):
+def set_light_state(id: str, state: LightState):
     response = setLightState(id, state)
 
     light = getLight(id)
@@ -121,7 +123,7 @@ def get_plug(id: str):
 
 
 @router.put("/plugs/{id}/state")
-def set_plug_state(id: str, state: dict):
+def set_plug_state(id: str, state: PlugState):
     response = setPlugState(id, state)
 
     plug = getPlug(id)

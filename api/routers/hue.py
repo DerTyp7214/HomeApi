@@ -1,7 +1,11 @@
 import json
+from typing import Optional
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 import requests
+
+from api.types import HueLightState, HuePlugState, LightColor, LightState, PlugState
 
 router = APIRouter(
     prefix="/hue",
@@ -30,15 +34,20 @@ def saveConfig():
 loadConfig()
 
 
+class Config(BaseModel):
+    host: Optional[str]
+    user: Optional[str]
+
+
 def mapLight(light, id: int):
     if "colormode" not in light["state"]:
         return None
 
-    return {
+    light = {
         "id": f"hue-{id}",
         "name": light["name"],
         "on": light["state"]["on"],
-        "brightness": float(light["state"]["bri"]) / 100,
+        "brightness": float(light["state"]["bri"]) / 255,
         "color": {
             "hue": float(light["state"]["hue"]) / 65535 * 360,
             "saturation": float(light["state"]["sat"]) / 255 * 100,
@@ -49,15 +58,19 @@ def mapLight(light, id: int):
         "manufacturer": light["manufacturername"],
         "uniqueid": light["uniqueid"],
         "swversion": light["swversion"],
-        "productid": light["productid"],
     }
+
+    if "productid" in light:
+        light["productid"] = light["productid"]
+
+    return light
 
 
 def mapPlug(plug, id: int):
     if plug["config"]["archetype"] != "plug":
         return None
 
-    return {
+    new_plug = {
         "id": f"hue-{id}",
         "name": plug["name"],
         "on": plug["state"]["on"],
@@ -67,8 +80,12 @@ def mapPlug(plug, id: int):
         "manufacturer": plug["manufacturername"],
         "uniqueid": plug["uniqueid"],
         "swversion": plug["swversion"],
-        "productid": plug["productid"],
     }
+
+    if "productid" in plug:
+        new_plug["productid"] = plug["productid"]
+
+    return new_plug
 
 
 def getLights():
@@ -131,28 +148,40 @@ def getNormalizedPlug(id: int):
     return mapPlug(plug, id)
 
 
-def setLightState(id: int, state: dict):
+def setLightState(id: int, state: HueLightState):
+    json = {}
+    if state.on is not None:
+        json["on"] = state.on
+    if state.bri is not None:
+        json["bri"] = int(state.bri)
+    if state.hue is not None:
+        json["hue"] = int(state.hue)
+    if state.sat is not None:
+        json["sat"] = int(state.sat)
+
     return requests.put(
-        f"http://{hueConfig['host']}/api/{hueConfig['user']}/lights/{id}/state", json=state)
+        f"http://{hueConfig['host']}/api/{hueConfig['user']}/lights/{id}/state", json=json)
 
 
-def setLightStateNormalized(id: int, state: dict):
-    new_state = {}
-    if "on" in state:
-        new_state["on"] = state["on"]
-    if "brightness" in state:
-        new_state["bri"] = int(state["brightness"] * 100)
-    if "color" in state:
-        if "hue" in state["color"]:
-            new_state["hue"] = int(state["color"]["hue"] / 360 * 65535)
-        if "saturation" in state["color"]:
-            new_state["sat"] = int(state["color"]["saturation"] / 100 * 255)
+def setLightStateNormalized(id: int, state: LightState):
+    new_state = HueLightState()
+
+    if state.color is not None:
+        if state.color.hue is not None:
+            new_state.hue = state.color.hue / 360 * 65535
+        if state.color.saturation is not None:
+            new_state.sat = state.color.saturation / 100 * 255
+
+    if state.on is not None:
+        new_state.on = state.on
+    if state.brightness is not None:
+        new_state.bri = state.brightness * 255
 
     return setLightState(id, new_state)
 
 
 @router.patch("/config")
-def set_config(new_config: dict):
+def set_config(new_config: Config):
     hueConfig.update(new_config)
     saveConfig()
     return Response(status_code=200)
@@ -189,7 +218,7 @@ def get_light(id: int):
 
 
 @router.put("/lights/{id}/state")
-def set_light_state(id: int, state: dict):
+def set_light_state(id: int, state: HueLightState):
     resopnse = setLightState(id, state)
 
     if resopnse.status_code == 200:
@@ -213,7 +242,7 @@ def get_plug(id: int):
 
 
 @router.put("/plugs/{id}/state")
-def set_plug_state(id: int, state: dict):
+def set_plug_state(id: int, state: HuePlugState):
     resopnse = setLightState(id, state)
 
     if resopnse.status_code == 200:
