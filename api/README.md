@@ -2,6 +2,9 @@
 
 ## Main: /
 
+The config should be persistent, so you only need to set it once.
+To use see devices from other apis, you need to set the config for them too.
+
 ### /lights
 
 normalized response with all lights
@@ -89,6 +92,10 @@ returns 200 if successfull, otherwise the error json
 ---
 
 ## Hue: /hue
+
+- Set the ip of the hue bridge using the config endpoint
+- Init the api using the init endpoint
+- Use the api as normal
 
 ### /hue/config {POST}
 
