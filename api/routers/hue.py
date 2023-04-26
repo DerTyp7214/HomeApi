@@ -8,7 +8,6 @@ import requests
 from api.types import HueLightState, HuePlugState, LightColor, LightState, PlugState
 
 router = APIRouter(
-    prefix="/hue",
     tags=["hue"],
     responses={404: {"description": "Not found"}},
 )

@@ -6,7 +6,6 @@ from fastapi.responses import JSONResponse
 
 
 router = APIRouter(
-    prefix="",
     tags=["main"],
     responses={404: {"description": "Not found"}},
 )
@@ -76,7 +75,16 @@ def saveConfig():
         json.dump(mainConfig, f)
 
 
+def getPackageJson():
+    with open("package.json", "r") as f:
+        return json.load(f)
+
 loadConfig()
+
+
+@router.get("/status")
+def get_status():
+    return JSONResponse(status_code=200, content={"status": "OK", "version": getPackageJson()["version"]})
 
 
 @router.get("/lights")

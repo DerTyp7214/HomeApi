@@ -6,7 +6,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "install:api": "pip install -r api/requirements.txt",
-    "start:api": "uvicorn api.main:app --reload"
+    "dev:api": "uvicorn api.main:app --reload",
+    "start:api": "uvicorn api.main:app",
+    "install:web": "cd web && pnpm install && cd ..",
+    "dev:web": "cd web && pnpm run dev && cd ..",
+    "build:web": "cd web && pnpm run build && cd ..",
+    "preview:web": "cd web && pnpm run preview && cd ..",
+    "check:web": "cd web && pnpm run check && cd .."
   },
   "keywords": [],
   "author": "",
