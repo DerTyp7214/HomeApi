@@ -84,3 +84,14 @@ export const setPlug = async (id: string, state: PlugInput) => {
   }
   throw new Error('Failed to set plug')
 }
+
+export const connectWebSocket = () => {
+  const ws = new WebSocket(`ws://${window.location.hostname}:8000/ws`)
+  ws.addEventListener('open', () => {
+    console.log('WebSocket connected')
+  })
+  ws.addEventListener('close', () => {
+    console.log('WebSocket disconnected')
+  })
+  return ws
+}

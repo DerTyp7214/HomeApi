@@ -1,4 +1,4 @@
-from api.types import LightState, PlugState
+from api.types import LightState, PlugState, WebSocketMessage, broadcast
 from .hue import getNormalizedLights as getHueLights, getNormalizedLight as getHueLight, setLightStateNormalized as setHueLightState, getNormalizedPlugs as getHuePlugs, getNormalizedPlug as getHuePlug
 import json
 from fastapi import APIRouter
@@ -79,6 +79,7 @@ def getPackageJson():
     with open("package.json", "r") as f:
         return json.load(f)
 
+
 loadConfig()
 
 
@@ -102,16 +103,24 @@ def get_light(id: str):
 
 
 @router.put("/lights/{id}/state")
-def set_light_state(id: str, state: LightState):
+async def set_light_state(id: str, state: LightState):
     response = setLightState(id, state)
 
     light = getLight(id)
 
-    if response.status_code == 200 and light is not None:
-        return JSONResponse(status_code=200, content=light)
-
     if light is None:
         return JSONResponse(status_code=404, content={"error": "Light not found"})
+
+    try:
+        await broadcast(WebSocketMessage(
+            type="light",
+            data=light,
+        ))
+    except:
+        pass
+
+    if response.status_code == 200:
+        return JSONResponse(status_code=200, content=light)
 
     return response
 
@@ -131,15 +140,23 @@ def get_plug(id: str):
 
 
 @router.put("/plugs/{id}/state")
-def set_plug_state(id: str, state: PlugState):
+async def set_plug_state(id: str, state: PlugState):
     response = setPlugState(id, state)
 
     plug = getPlug(id)
 
-    if response.status_code == 200 and plug is not None:
-        return JSONResponse(status_code=200, content=plug)
-
     if plug is None:
         return JSONResponse(status_code=404, content={"error": "Plug not found"})
+
+    try:
+        await broadcast(WebSocketMessage(
+            type="plug",
+            data=plug,
+        ))
+    except:
+        pass
+
+    if response.status_code == 200:
+        return JSONResponse(status_code=200, content=plug)
 
     return response

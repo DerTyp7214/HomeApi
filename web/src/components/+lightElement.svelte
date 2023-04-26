@@ -17,6 +17,7 @@
   style="--color: {color}"
   class="rounded-md w-36 h-36 flex flex-col justify-center items-center m-2 border-2 cursor-pointer hover:border-4 hover:scale-110"
   on:click={toggleLight}
+  on:keyup={() => {}}
 >
   <h1 class="text-xl font-bold select-none">{light.name}</h1>
   <h1 class="text-lg font-bold select-none">{light.on ? 'ON' : 'OFF'}</h1>

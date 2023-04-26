@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import requests
 
-from api.types import HueLightState, HuePlugState, LightColor, LightState, PlugState
+from api.types import HueLightState, HuePlugState, LightColor, LightState, PlugState, WebSocketMessage, broadcast
 
 router = APIRouter(
     tags=["hue"],
@@ -217,8 +217,18 @@ def get_light(id: int):
 
 
 @router.put("/lights/{id}/state")
-def set_light_state(id: int, state: HueLightState):
+async def set_light_state(id: int, state: HueLightState):
     resopnse = setLightState(id, state)
+
+    try:
+        light = getLight(id)
+        if light is not None:
+            await broadcast(WebSocketMessage(
+                type="light",
+                data=light,
+            ))
+    except:
+        pass
 
     if resopnse.status_code == 200:
         return Response(status_code=200)
@@ -241,10 +251,20 @@ def get_plug(id: int):
 
 
 @router.put("/plugs/{id}/state")
-def set_plug_state(id: int, state: HuePlugState):
-    resopnse = setLightState(id, state)
+async def set_plug_state(id: int, state: HuePlugState):
+    response = setLightState(id, state)
 
-    if resopnse.status_code == 200:
+    try:
+        plug = getPlug(id)
+        if plug is not None:
+            await broadcast(WebSocketMessage(
+                type="plug",
+                data=plug,
+            ))
+    except:
+        pass
+
+    if response.status_code == 200:
         return Response(status_code=200)
 
-    return Response(status_code=400, content=resopnse.json())
+    return Response(status_code=400, content=response.json())
