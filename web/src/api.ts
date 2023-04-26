@@ -1,6 +1,6 @@
 let _apiUrl =
   localStorage.getItem('apiUrl') ??
-  `${window.location.protocol}//${window.location.hostname}:8000/api`
+  `${window.location.protocol}//${window.location.host}/api`
 
 export const apiUrl = _apiUrl
 
@@ -86,7 +86,7 @@ export const setPlug = async (id: string, state: PlugInput) => {
 }
 
 export const connectWebSocket = () => {
-  const ws = new WebSocket(`ws://${window.location.hostname}:8000/ws`)
+  const ws = new WebSocket(`ws://${window.location.host}/ws`)
   ws.addEventListener('open', () => {
     console.log('WebSocket connected')
   })

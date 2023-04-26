@@ -1,5 +1,6 @@
-import json
+import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.routing import Router
@@ -11,7 +12,7 @@ from .types import origins, manager
 app = FastAPI(
     title="Home API",
     description="API for controlling my home",
-    version="0.1.0"
+    version="0.1.0",
 )
 
 app.add_middleware(
@@ -30,6 +31,11 @@ static_router.mount(
 app.mount("/static", static_router, name="static")
 app.include_router(main.router, prefix="/api")
 app.include_router(hue.router, prefix="/api/hue")
+
+
+@app.get("/")
+def root():
+    return RedirectResponse(url="/static")
 
 
 @app.websocket("/ws")
