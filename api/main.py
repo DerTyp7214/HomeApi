@@ -7,7 +7,7 @@ from starlette.routing import Router
 
 from .routers import main, hue
 
-from .types import origins, manager
+from .consts import origins, manager
 
 app = FastAPI(
     title="Home API",

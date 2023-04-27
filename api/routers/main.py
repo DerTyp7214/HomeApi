@@ -1,4 +1,4 @@
-from api.types import LightState, PlugState, WebSocketMessage, broadcast
+from api.consts import LightState, PlugState, WebSocketMessage, broadcast
 from .hue import getNormalizedLights as getHueLights, getNormalizedLight as getHueLight, setLightStateNormalized as setHueLightState, getNormalizedPlugs as getHuePlugs, getNormalizedPlug as getHuePlug
 import json
 from fastapi import APIRouter

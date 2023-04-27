@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import requests
 
-from api.types import HueLightState, HuePlugState, LightColor, LightState, PlugState, WebSocketMessage, broadcast
+from api.consts import HueLightState, HuePlugState, LightColor, LightState, PlugState, WebSocketMessage, broadcast
 
 router = APIRouter(
     tags=["hue"],
