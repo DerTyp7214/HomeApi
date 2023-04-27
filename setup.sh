@@ -37,6 +37,25 @@ else
     echo "python3 is installed."
 fi
 
+if which pip3 >/dev/null ; then
+    echo "pip3 is already installed."
+else
+    echo "Installing pip3."
+
+    if which curl >/dev/null ; then
+        echo "Downloading via curl."
+        curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3 -
+    elif which wget >/dev/null ; then
+        echo "Downloading via wget."
+        wget -qO- https://bootstrap.pypa.io/get-pip.py | python3 -
+    else
+        echo "Cannot download, neither wget nor curl is available."
+        exit 1
+    fi
+
+    echo "pip3 is installed."
+fi
+
 
 pnpm install
 pnpm install:api
