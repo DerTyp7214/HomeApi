@@ -3,20 +3,7 @@ if which node >/dev/null ; then
 else
     echo "Installing node."
 
-    if which curl >/dev/null ; then
-        echo "Downloading via curl."
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
-    elif which wget >/dev/null ; then
-        echo "Downloading via wget."
-        wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
-    else
-        echo "Cannot download, neither wget nor curl is available."
-        exit 1
-    fi
-
-    source ~/.nvm/nvm.sh
-    nvm install --lts
-    nvm use --lts
+    sudo apt install nodejs -y
 
     echo "node is installed."
 fi
