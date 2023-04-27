@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install:api": "pip install -r api/requirements.txt",
+    "install:api": "pip3 install -r api/requirements.txt",
     "dev:api": "uvicorn api.main:app --reload --host 0.0.0.0",
     "start:api": "uvicorn api.main:app --host 0.0.0.0",
     "install:web": "cd web && pnpm install && cd ..",
