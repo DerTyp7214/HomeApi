@@ -2,11 +2,10 @@
   "name": "home-api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install:api": "pip install -r api/requirements.txt",
+    "install:api": "pip3 install -r api/requirements.txt",
     "dev:api": "uvicorn api.main:app --reload --host 0.0.0.0",
     "start:api": "uvicorn api.main:app --host 0.0.0.0",
     "install:web": "cd web && pnpm install && cd ..",
@@ -21,6 +20,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
+    "@types/noble": "^0.0.41",
     "@types/node": "^18.16.0",
     "ts-node": "^10.9.1"
   },

@@ -7,7 +7,7 @@ from starlette.routing import Router
 
 from .routers import main, hue
 
-from .types import origins, manager
+from .consts import origins, manager
 
 app = FastAPI(
     title="Home API",
@@ -26,7 +26,7 @@ app.add_middleware(
 static_router = Router()
 
 static_router.mount(
-    "/", StaticFiles(directory="api\\dist", html=True), name="dist")
+    "/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "dist"), html=True), name="dist")
 
 app.mount("/static", static_router, name="static")
 app.include_router(main.router, prefix="/api")
