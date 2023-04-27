@@ -44,8 +44,16 @@ elif which ~/.local/bin/pip3 >/dev/null ; then
     echo "adding ~/.local/bin to PATH"
 
     if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-        echo "export PATH=$PATH:$HOME/.local/bin" >> ~/.bashrc
-        source ~/.bashrc
+        if cat ~/.bashrc | grep "# LOCAL_BIN_PATH" > /dev/null ; then
+            echo "LOCAL_BIN_PATH is already in .bashrc"
+            source ~/.bashrc
+        else
+            echo "adding LOCAL_BIN_PATH to .bashrc"
+            echo "" >> ~/.bashrc
+            echo "# LOCAL_BIN_PATH" >> ~/.bashrc
+            echo "export PATH=$PATH:$HOME/.local/bin" >> ~/.bashrc
+            source ~/.bashrc
+        fi
     fi
 else
     echo "Installing pip3."
