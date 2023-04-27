@@ -39,6 +39,15 @@ fi
 
 if which pip3 >/dev/null ; then
     echo "pip3 is already installed."
+
+elif which ~/.local/bin/pip3 >/dev/null ; then
+    echo "pip3 is already installed."
+    echo "adding ~/.local/bin to PATH"
+
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        echo "export PATH=$PATH:$HOME/.local/bin" >> ~/.bashrc
+        source ~/.bashrc
+    fi
 else
     echo "Installing pip3."
 
