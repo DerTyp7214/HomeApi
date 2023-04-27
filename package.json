@@ -27,7 +27,6 @@
   "dependencies": {
     "chalk": "^5.2.0",
     "fs-extra": "^11.1.1",
-    "log-update": "^5.0.1",
-    "noble-winrt": "^0.1.1"
+    "log-update": "^5.0.1"
   }
 }
