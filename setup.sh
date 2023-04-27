@@ -1,5 +1,13 @@
 #!/bin/bash
 
+echo "This script will install node, npm, pnpm, python3, and pip3."
+read -p "Do you wish to continue? (y/n) " yn
+case $yn in
+    [Yy]* ) ;;
+    [Nn]* ) exit;;
+    * ) echo "Please answer yes or no.";;
+esac
+
 if which node >/dev/null ; then
     echo "node is already installed."
 else

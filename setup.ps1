@@ -1,3 +1,14 @@
+Write-Host "This script will install node, pnpm, python3, and winget. Please confirm that you want to continue (y/n)"
+$confirmation = Read-Host
+
+if ($confirmation -eq "y") {
+  Write-Host "Continuing with setup"
+} else {
+  Write-Host "Exiting setup"
+  exit
+}
+
+
 $ErrorActionPreference = 'SilentlyContinue'
 pnpm -v > $null 2>&1
 $ErrorActionPreference = 'Continue'
