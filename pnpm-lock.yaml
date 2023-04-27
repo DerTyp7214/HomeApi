@@ -10,9 +10,6 @@ dependencies:
   log-update:
     specifier: ^5.0.1
     version: 5.0.1
-  noble-winrt:
-    specifier: ^0.1.1
-    version: 0.1.1
 
 devDependencies:
   '@types/fs-extra':
@@ -124,33 +121,9 @@ packages:
     resolution: {integrity: sha512-58S9QDqG0Xx27YwPSt9fJxivjYl432YCwfDMfZ+71RAqUrZef7LrKQZ3LHLOwCS4FLNBplP533Zx895SeOCHvA==}
     dev: true
 
-  /bluetooth-hci-socket@0.5.1:
-    resolution: {integrity: sha512-5/cPO2R+X4UXLudZOevREf3kwyCNCVovA9rcXk5smBgx+q/sIucfkC6F57+xWR5X17bY931w6bB2EUaPh9ArfQ==}
-    os: [linux, android, win32]
-    requiresBuild: true
-    dependencies:
-      debug: 2.6.9
-      nan: 2.17.0
-    optionalDependencies:
-      usb: 1.9.2
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-    optional: true
-
-  /bplist-parser@0.0.6:
-    resolution: {integrity: sha512-fGeghPEH4Eytvf+Mi446aKcDqvkA/+eh6r7QGiZWMQG6TzqrnsToLP379XFfqRSZ41+676hhGIm++maNST1Apw==}
-    requiresBuild: true
-    dev: false
-    optional: true
-
   /chalk@5.2.0:
     resolution: {integrity: sha512-ree3Gqw/nazQAPuJJEy+avdl7QfZMcUvmHIKgEZkGL+xOBzRvup5Hxo6LHuMceSxOabuJLJm5Yp/92R9eMmMvA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
-    dev: false
-
-  /chrome-native-messaging@0.2.0:
-    resolution: {integrity: sha512-RgTFMY0x/K5JUSLfd+rTaWxNvkliYqNR41h5DbbkjlDCbxmZSXIHAYOSTbIazjyorzpK26Y2H9BXnboy4s9SXw==}
     dev: false
 
   /cli-cursor@4.0.0:
@@ -163,28 +136,6 @@ packages:
   /create-require@1.1.1:
     resolution: {integrity: sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==}
     dev: true
-
-  /debug@2.2.0:
-    resolution: {integrity: sha512-X0rGvJcskG1c3TgSCPqHJ0XJgwlcvOC7elJ5Y0hYuKBZoVqWpAMfLOeIh2UI/DCQ5ruodIjvsugZtjUYUw2pUw==}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-    dependencies:
-      ms: 0.7.1
-    dev: false
-
-  /debug@2.6.9:
-    resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-    dependencies:
-      ms: 2.0.0
-    dev: false
 
   /diff@4.0.2:
     resolution: {integrity: sha512-58lmxKSA4BNyLz+HHMUzlOEpg09FV+ev6ZMe3vJihgdxzgcwZ8VoEEPmALCZG9LmqfVoNMMKpttIYTVG6uDY7A==}
@@ -244,55 +195,6 @@ packages:
     resolution: {integrity: sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==}
     engines: {node: '>=6'}
     dev: false
-
-  /ms@0.7.1:
-    resolution: {integrity: sha512-lRLiIR9fSNpnP6TC4v8+4OU7oStC01esuNowdQ34L+Gk8e5Puoc88IqJ+XAY/B3Mn2ZKis8l8HX90oU8ivzUHg==}
-    dev: false
-
-  /ms@2.0.0:
-    resolution: {integrity: sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==}
-    dev: false
-
-  /nan@2.17.0:
-    resolution: {integrity: sha512-2ZTgtl0nJsO0KQCjEpxcIr5D+Yv90plTitZt9JBfQvVJDS5seMl3FOvsh3+9CoYWXf/1l5OaZzzF6nDm4cagaQ==}
-    dev: false
-    optional: true
-
-  /noble-winrt@0.1.1:
-    resolution: {integrity: sha512-IUlWQfaHJMuiYOQTGvW4YdWeQR7E6tBVXut8KDMkIFGAKU+LNvTciWYTwHUlzqZKtuP3jc9VFMBvR9UDFNq7Sw==}
-    engines: {node: '>=6.4.0'}
-    dependencies:
-      chrome-native-messaging: 0.2.0
-      debug: 2.6.9
-      noble: 1.9.1
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-
-  /noble@1.9.1:
-    resolution: {integrity: sha512-5sbPLvCh1zJqy5caq+oQQE9eYoXB/ePweLWuN8UeapWO6KgFu4SS0VeLmYc23HTfWAXKb/ey6rtEvHwn9aY5Iw==}
-    engines: {node: '>=0.8'}
-    os: [darwin, linux, freebsd, win32]
-    dependencies:
-      debug: 2.2.0
-    optionalDependencies:
-      bluetooth-hci-socket: 0.5.1
-      bplist-parser: 0.0.6
-      xpc-connection: 0.1.4
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-
-  /node-addon-api@4.3.0:
-    resolution: {integrity: sha512-73sE9+3UaLYYFmDsFZnqCInzPyh3MqIwZO9cw58yIqAZhONrrabrYyYe3TuIqtIiOuTXVhsGau8hcrhhwSsDIQ==}
-    dev: false
-    optional: true
-
-  /node-gyp-build@4.6.0:
-    resolution: {integrity: sha512-NTZVKn9IylLwUzaKjkas1e4u2DLNcV4rdYagA4PWdPwW87Bi7z+BznyKSRwS/761tV/lzCGXplWsiaMjLqP2zQ==}
-    hasBin: true
-    dev: false
-    optional: true
 
   /onetime@5.1.2:
     resolution: {integrity: sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg==}
@@ -384,16 +286,6 @@ packages:
     engines: {node: '>= 10.0.0'}
     dev: false
 
-  /usb@1.9.2:
-    resolution: {integrity: sha512-dryNz030LWBPAf6gj8vyq0Iev3vPbCLHCT8dBw3gQRXRzVNsIdeuU+VjPp3ksmSPkeMAl1k+kQ14Ij0QHyeiAg==}
-    engines: {node: '>=10.16.0'}
-    requiresBuild: true
-    dependencies:
-      node-addon-api: 4.3.0
-      node-gyp-build: 4.6.0
-    dev: false
-    optional: true
-
   /v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
     dev: true
@@ -406,16 +298,6 @@ packages:
       string-width: 5.1.2
       strip-ansi: 7.0.1
     dev: false
-
-  /xpc-connection@0.1.4:
-    resolution: {integrity: sha512-Np4+cx5l9zhSNrH5O5niVqVT0vBnja4IG5CxuBgCvTdWGiyujRwUTSj/FtT66KX84/MMCKpt5wIcuORBMFT6qQ==}
-    engines: {node: '>=0.8'}
-    os: [darwin]
-    requiresBuild: true
-    dependencies:
-      nan: 2.17.0
-    dev: false
-    optional: true
 
   /yn@3.1.1:
     resolution: {integrity: sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q==}

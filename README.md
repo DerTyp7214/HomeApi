@@ -1,5 +1,24 @@
 # Home api
 
+## Easy Install
+
+### Unix
+
+run `setup.sh` to setup the project
+
+### Windows
+
+run `setup.ps1` to setup the project
+
+## Advanced Install
+
+### Requirements
+
+- [pnpm](https://pnpm.io/installation)
+- [node](https://nodejs.org/en/)
+- [python3](https://www.python.org/downloads/)
+- [pip3](https://pip.pypa.io/en/stable/installation/)
+
 run `pnpm install` to install the dependencies
 
 ## Api
