@@ -1,12 +1,30 @@
-if which node >/dev/null ; then
-    echo "node is already installed."
+#!/bin/bash
+
+if [ -x "$(command -v apt-get)" ]; then
+    sudo apt-get update
+
+    sudo apt-get install -y nodejs
+
+elif [ -x "$(command -v pacman)" ]; then
+    sudo pacman -S nodejs
+
+elif [ -x "$(command -v pkg)" ]; then
+    sudo pkg install node
+
+elif [ -x "$(command -v brew)" ]; then
+    sudo brew install node
+
 else
-    echo "Installing node."
-
-    sudo apt install nodejs -y
-
-    echo "node is installed."
+    echo "Unable to determine package manager for this system"
+    exit 1
 fi
+
+if [ -x "$(command -v node)" ] && [ -x "$(command -v npm)" ]; then
+    echo "Node.js and npm were installed successfully"
+else
+    echo "Node.js and/or npm were not installed successfully"
+fi
+
 
 if which pnpm >/dev/null ; then
     echo "pnpm is already installed."
