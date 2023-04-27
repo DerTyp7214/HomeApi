@@ -14,6 +14,7 @@ router = APIRouter(
 
 hueConfig = {
     "host": "",
+    "user": "",
 }
 
 
@@ -88,6 +89,8 @@ def mapPlug(plug, id: int):
 
 
 def getLights():
+    if hueConfig["host"] == "" or hueConfig["user"] == "":
+        return []
     lights = requests.get(
         f"http://{hueConfig['host']}/api/{hueConfig['user']}/lights")
     return lights.json()
@@ -104,6 +107,8 @@ def getNormalizedLights():
 
 
 def getLight(id: int):
+    if hueConfig["host"] == "" or hueConfig["user"] == "":
+        return None
     light = requests.get(
         f"http://{hueConfig['host']}/api/{hueConfig['user']}/lights/{id}")
     return light.json()
@@ -135,7 +140,7 @@ def getNormalizedPlugs():
 
 def getPlug(id: int):
     plug = getLight(id)
-    if plug["config"]["archetype"] != "plug":
+    if plug is None or plug["config"]["archetype"] != "plug":
         return None
     return plug
 
