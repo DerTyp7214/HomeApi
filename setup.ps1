@@ -10,6 +10,16 @@ if ($?) {
 }
 
 $ErrorActionPreference = 'SilentlyContinue'
+winget -v > $null 2>&1
+$ErrorActionPreference = 'Continue'
+
+if ($?) {
+  Write-Host "winget already installed"
+} else {
+  Write-Host "winget not installed, please install winget (https://github.com/microsoft/winget-cli)"
+}
+
+$ErrorActionPreference = 'SilentlyContinue'
 node -v > $null 2>&1
 $ErrorActionPreference = 'Continue'
 
