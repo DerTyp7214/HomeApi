@@ -1,3 +1,26 @@
+if which node >/dev/null ; then
+    echo "node is already installed."
+else
+    echo "Installing node."
+
+    if which curl >/dev/null ; then
+        echo "Downloading via curl."
+        curl -fsSL https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sh -
+    elif which wget >/dev/null ; then
+        echo "Downloading via wget."
+        wget -qO- https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sh -
+    else
+        echo "Cannot download, neither wget nor curl is available."
+        exit 1
+    fi
+
+    source ~/.nvm/nvm.sh
+    nvm install --lts
+    nvm use --lts
+
+    echo "node is installed."
+fi
+
 if which pnpm >/dev/null ; then
     echo "pnpm is already installed."
 else
