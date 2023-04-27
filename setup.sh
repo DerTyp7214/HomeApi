@@ -19,6 +19,22 @@ else
     esac
 fi
 
+if which python3 >/dev/null ; then
+    echo "python3 is already installed."
+else
+    if which curl >/dev/null ; then
+        echo "Downloading via curl."
+        curl -fsSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
+    elif which wget >/dev/null ; then
+        echo "Downloading via wget."
+        wget -qO- https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
+    else
+        echo "Cannot download, neither wget nor curl is available."
+        exit 1
+    fi
+fi
+
+
 pnpm install
 pnpm install:api
 pnpm install:web
