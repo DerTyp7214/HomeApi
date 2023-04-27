@@ -5,10 +5,10 @@ else
 
     if which curl >/dev/null ; then
         echo "Downloading via curl."
-        curl -fsSL https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sh -
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
     elif which wget >/dev/null ; then
         echo "Downloading via wget."
-        wget -qO- https://raw.githubusercontent.com/creationix/nvm/master/install.sh | sh -
+        wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/master/install.sh | bash
     else
         echo "Cannot download, neither wget nor curl is available."
         exit 1
