@@ -1,4 +1,5 @@
-from api.consts import LightState, PlugState, WebSocketMessage, broadcast
+from dataclasses import dataclass
+from api.consts import Light, LightState, Plug, PlugState, WebSocketMessage, broadcast
 from .hue import getNormalizedLights as getHueLights, getNormalizedLight as getHueLight, setLightStateNormalized as setHueLightState, getNormalizedPlugs as getHuePlugs, getNormalizedPlug as getHuePlug
 import json
 from fastapi import APIRouter
@@ -10,15 +11,12 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-mainConfig = {
-}
 
-
-def allLights():
+def allLights() -> list[Light]:
     return [*getHueLights()]
 
 
-def allPlugs():
+def allPlugs() -> list[Plug]:
     return [*getHuePlugs()]
 
 
@@ -47,7 +45,10 @@ def getPlug(id: str):
 def setLightState(id: str, state: LightState):
     try:
         if id.startswith("hue-"):
-            return setHueLightState(int(id.replace("hue-", "")), state)
+            response = setHueLightState(int(id.replace("hue-", "")), state)
+            if response is None:
+                return JSONResponse(status_code=404, content={"error": "Light not found"})
+            return response
         return JSONResponse(status_code=404, content={"error": "Light not found"})
     except ValueError:
         return JSONResponse(status_code=404, content={"error": "Light not found"})
@@ -56,23 +57,13 @@ def setLightState(id: str, state: LightState):
 def setPlugState(id: str, state: PlugState):
     try:
         if id.startswith("hue-"):
-            return setHueLightState(int(id.replace("hue-", "")), state)
+            response = setHueLightState(int(id.replace("hue-", "")), state)
+            if response is None:
+                return JSONResponse(status_code=404, content={"error": "Plug not found"})
+            return response
         return JSONResponse(status_code=404, content={"error": "Plug not found"})
     except ValueError:
         return JSONResponse(status_code=404, content={"error": "Plug not found"})
-
-
-def loadConfig():
-    try:
-        with open("mainConfig.json", "r") as f:
-            mainConfig.update(json.load(f))
-    except FileNotFoundError:
-        saveConfig()
-
-
-def saveConfig():
-    with open("mainConfig.json", "w") as f:
-        json.dump(mainConfig, f)
 
 
 def getPackageJson():
@@ -80,29 +71,36 @@ def getPackageJson():
         return json.load(f)
 
 
-loadConfig()
+@dataclass
+class StatusResponse():
+    status: str
+    version: str
 
 
-@router.get("/status")
+@router.get("/status", response_model=StatusResponse)
 def get_status():
     return JSONResponse(status_code=200, content={"status": "OK", "version": getPackageJson()["version"]})
 
 
-@router.get("/lights")
+@router.get("/lights", response_model=list[Light])
 def get_lights():
-    return JSONResponse(status_code=200, content=allLights())
+    lights = []
+    for light in allLights():
+        lights.append(light.to_dict())
+
+    return JSONResponse(status_code=200, content=lights)
 
 
-@router.get("/lights/{id}")
+@router.get("/lights/{id}", response_model=Light)
 def get_light(id: str):
     light = getLight(id)
 
     if light is None:
         return JSONResponse(status_code=404, content={"error": "Light not found"})
-    return JSONResponse(status_code=200, content=light)
+    return JSONResponse(status_code=200, content=light.to_dict())
 
 
-@router.put("/lights/{id}/state")
+@router.put("/lights/{id}/state", response_model=dict)
 async def set_light_state(id: str, state: LightState):
     response = setLightState(id, state)
 
@@ -112,34 +110,38 @@ async def set_light_state(id: str, state: LightState):
         return JSONResponse(status_code=404, content={"error": "Light not found"})
 
     try:
-        await broadcast(WebSocketMessage(
-            type="light",
-            data=light,
-        ))
+        await broadcast(WebSocketMessage.from_dict({
+            "type": "light",
+            "data": light.__dict__,
+        }))
     except:
         pass
 
     if response.status_code == 200:
-        return JSONResponse(status_code=200, content=light)
+        return JSONResponse(status_code=200, content=light.to_dict())
 
     return response
 
 
-@router.get("/plugs")
+@router.get("/plugs", response_model=list[Plug])
 def get_plugs():
-    return JSONResponse(status_code=200, content=allPlugs())
+    plugs = []
+    for plug in allPlugs():
+        plugs.append(plug.to_dict())
+
+    return JSONResponse(status_code=200, content=plugs)
 
 
-@router.get("/plugs/{id}")
+@router.get("/plugs/{id}", response_model=Plug)
 def get_plug(id: str):
     plug = getPlug(id)
 
     if plug is None:
         return JSONResponse(status_code=404, content={"error": "Plug not found"})
-    return JSONResponse(status_code=200, content=plug)
+    return JSONResponse(status_code=200, content=plug.to_dict())
 
 
-@router.put("/plugs/{id}/state")
+@router.put("/plugs/{id}/state", response_model=dict)
 async def set_plug_state(id: str, state: PlugState):
     response = setPlugState(id, state)
 
@@ -151,12 +153,12 @@ async def set_plug_state(id: str, state: PlugState):
     try:
         await broadcast(WebSocketMessage(
             type="plug",
-            data=plug,
+            data=plug.__dict__,
         ))
     except:
         pass
 
     if response.status_code == 200:
-        return JSONResponse(status_code=200, content=plug)
+        return JSONResponse(status_code=200, content=plug.to_dict())
 
     return response

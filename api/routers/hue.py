@@ -1,45 +1,19 @@
 import json
-from typing import Optional
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import requests
 
-from api.consts import HueLightState, HuePlugState, LightColor, LightState, PlugState, WebSocketMessage, broadcast
+from api.consts import HueConfig, HueLightResponse, HueLightState, HuePlugResponse, HuePlugState, Light, LightState, Plug, WebSocketMessage, broadcast
+from api.config import config
 
 router = APIRouter(
     tags=["hue"],
     responses={404: {"description": "Not found"}},
 )
 
-hueConfig = {
-    "host": "",
-    "user": "",
-}
 
-
-def loadConfig():
-    try:
-        with open("hueConfig.json", "r") as f:
-            hueConfig.update(json.load(f))
-    except FileNotFoundError:
-        saveConfig()
-
-
-def saveConfig():
-    with open("hueConfig.json", "w") as f:
-        json.dump(hueConfig, f)
-
-
-loadConfig()
-
-
-class Config(BaseModel):
-    host: Optional[str]
-    user: Optional[str]
-
-
-def mapLight(light, id: int):
+def mapLight(light, id: int) -> Light | None:
     if "colormode" not in light["state"]:
         return None
 
@@ -58,15 +32,13 @@ def mapLight(light, id: int):
         "manufacturer": light["manufacturername"],
         "uniqueid": light["uniqueid"],
         "swversion": light["swversion"],
+        "productid": light["productid"]
     }
 
-    if "productid" in light:
-        light["productid"] = light["productid"]
-
-    return light
+    return Light.from_dict(light)
 
 
-def mapPlug(plug, id: int):
+def mapPlug(plug, id: int) -> Plug | None:
     if plug["config"]["archetype"] != "plug":
         return None
 
@@ -80,19 +52,18 @@ def mapPlug(plug, id: int):
         "manufacturer": plug["manufacturername"],
         "uniqueid": plug["uniqueid"],
         "swversion": plug["swversion"],
+        "productid": plug["productid"]
     }
 
-    if "productid" in plug:
-        new_plug["productid"] = plug["productid"]
-
-    return new_plug
+    return Plug.from_dict(new_plug)
 
 
 def getLights():
-    if hueConfig["host"] == "" or hueConfig["user"] == "":
+    user, host = config.get_hue_user(), config.get_hue_host()
+    if host == "" or user == "":
         return []
     lights = requests.get(
-        f"http://{hueConfig['host']}/api/{hueConfig['user']}/lights")
+        f"http://{host}/api/{user}/lights")
     return lights.json()
 
 
@@ -107,10 +78,11 @@ def getNormalizedLights():
 
 
 def getLight(id: int):
-    if hueConfig["host"] == "" or hueConfig["user"] == "":
+    user, host = config.get_hue_user(), config.get_hue_host()
+    if host == "" or user == "":
         return None
     light = requests.get(
-        f"http://{hueConfig['host']}/api/{hueConfig['user']}/lights/{id}")
+        f"http://{host}/api/{user}/lights/{id}")
     return light.json()
 
 
@@ -153,22 +125,16 @@ def getNormalizedPlug(id: int):
 
 
 def setLightState(id: int, state: HueLightState):
-    json = {}
-    if state.on is not None:
-        json["on"] = state.on
-    if state.bri is not None:
-        json["bri"] = int(state.bri)
-    if state.hue is not None:
-        json["hue"] = int(state.hue)
-    if state.sat is not None:
-        json["sat"] = int(state.sat)
+    user, host = config.get_hue_user(), config.get_hue_host()
+    if host == "" or user == "":
+        return None
 
     return requests.put(
-        f"http://{hueConfig['host']}/api/{hueConfig['user']}/lights/{id}/state", json=json)
+        f"http://{host}/api/{user}/lights/{id}/state", json=state.to_dict())
 
 
 def setLightStateNormalized(id: int, state: LightState):
-    new_state = HueLightState()
+    new_state = HueLightState.from_dict({})
 
     if state.color is not None:
         if state.color.hue is not None:
@@ -185,19 +151,23 @@ def setLightStateNormalized(id: int, state: LightState):
 
 
 @router.patch("/config")
-def set_config(new_config: Config):
-    hueConfig.update(new_config)
-    saveConfig()
+def set_config(new_config: HueConfig):
+    config.hue = new_config
     return Response(status_code=200)
 
 
-@router.get("/init")
+class UserResponse(BaseModel):
+    username: str
+
+
+@router.get("/init", responses={200: {"model": UserResponse}, 400: {"model": str}})
 def hue_init():
-    if hueConfig['host'] == "":
+    host = config.get_hue_host()
+    if host == "":
         return Response(status_code=400, content="No host set")
 
     userRequest = requests.post(
-        f"http://{hueConfig['host']}/api", json={"devicetype": "my_hue_app#home api"})
+        f"http://{host}/api", json={"devicetype": "my_hue_app#home api"})
 
     json = userRequest.json()[0]
     error = json.get("error")
@@ -205,25 +175,26 @@ def hue_init():
     if error is not None and error.get("type") == 101:
         return Response(status_code=400, content="Link button not pressed")
 
-    hueConfig['user'] = userRequest.json()[0].get("success").get("username")
-    saveConfig()
+    user = userRequest.json()[0].get("success").get("username")
 
-    return JSONResponse(status_code=200, content={"username": hueConfig['user']})
+    config.set_hue_user(user)
+
+    return JSONResponse(status_code=200, content={"username": user})
 
 
-@router.get("/lights")
+@router.get("/lights", response_model=dict[str, HueLightResponse])
 def get_lights():
     return JSONResponse(status_code=200, content=getLights())
 
 
-@router.get("/lights/{id}")
+@router.get("/lights/{id}", response_model=HueLightResponse)
 def get_light(id: int):
     return JSONResponse(status_code=200, content=getLight(id))
 
 
-@router.put("/lights/{id}/state")
+@router.put("/lights/{id}/state", response_model=dict)
 async def set_light_state(id: int, state: HueLightState):
-    resopnse = setLightState(id, state)
+    response = setLightState(id, state)
 
     try:
         light = getLight(id)
@@ -235,18 +206,21 @@ async def set_light_state(id: int, state: HueLightState):
     except:
         pass
 
-    if resopnse.status_code == 200:
+    if response is None:
+        return Response(status_code=400, content="No host or user set")
+
+    if response.status_code == 200:
         return Response(status_code=200)
 
-    return Response(status_code=400, content=resopnse.json())
+    return Response(status_code=400, content=response.json())
 
 
-@router.get("/plugs")
+@router.get("/plugs", response_model=dict[str, HuePlugResponse])
 def get_plugs():
     return JSONResponse(status_code=200, content=getPlugs())
 
 
-@router.get("/plugs/{id}")
+@router.get("/plugs/{id}", response_model=HuePlugResponse)
 def get_plug(id: int):
     plug = getPlug(id)
     if plug is None:
@@ -255,7 +229,7 @@ def get_plug(id: int):
     return JSONResponse(status_code=200, content=plug)
 
 
-@router.put("/plugs/{id}/state")
+@router.put("/plugs/{id}/state", response_model=dict)
 async def set_plug_state(id: int, state: HuePlugState):
     response = setLightState(id, state)
 
@@ -268,6 +242,9 @@ async def set_plug_state(id: int, state: HuePlugState):
             ))
     except:
         pass
+
+    if response is None:
+        return Response(status_code=400, content="No host or user set")
 
     if response.status_code == 200:
         return Response(status_code=200)

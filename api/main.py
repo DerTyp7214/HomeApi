@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.routing import Router
 
-from .routers import main, hue
+from .routers import main, hue, wled
 
 from .consts import origins, manager
 
@@ -31,6 +31,7 @@ static_router.mount(
 app.mount("/static", static_router, name="static")
 app.include_router(main.router, prefix="/api")
 app.include_router(hue.router, prefix="/api/hue")
+app.include_router(wled.router, prefix="/api/wled")
 
 
 @app.get("/")

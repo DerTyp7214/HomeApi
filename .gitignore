@@ -1,6 +1,5 @@
 node_modules
-hueConfig.json
-mainConfig.json
+config.json
 __pycache__
 .venv
 .vscode
