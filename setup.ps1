@@ -99,7 +99,6 @@ if ($confirmation -eq "y") {
 
 $ErrorActionPreference = 'SilentlyContinue'
 pnpm -v > $null 2>&1
-$ErrorActionPreference = 'Continue'
 
 if ($?) {
   Write-Host "pnpm already installed" -f Green
@@ -112,7 +111,6 @@ if ($?) {
 
 $ErrorActionPreference = 'SilentlyContinue'
 winget -v > $null 2>&1
-$ErrorActionPreference = 'Continue'
 
 if ($?) {
   Write-Host "winget already installed" -f Green
@@ -122,7 +120,6 @@ if ($?) {
 
 $ErrorActionPreference = 'SilentlyContinue'
 node -v > $null 2>&1
-$ErrorActionPreference = 'Continue'
 
 if ($?) {
   Write-Host "nodejs already installed" -f Green
@@ -136,7 +133,6 @@ if ($?) {
 # check if python3 is installed and install if not
 $ErrorActionPreference = 'SilentlyContinue'
 python3 -V > $null 2>&1
-$ErrorActionPreference = 'Continue'
 
 if ($?) {
   Write-Host "python3 already installed" -f Green
@@ -149,7 +145,6 @@ if ($?) {
 
 $ErrorActionPreference = 'SilentlyContinue'
 Get-ChildItem "C:\Program Files\MongoDB" > $null 2>&1
-$ErrorActionPreference = 'Continue'
 
 if ($?) {
   Write-Host "MongoDB already installed" -f Green
@@ -158,24 +153,44 @@ if ($?) {
   winget install -e --id MongoDB.Server
   Write-Host "Installing mongodb compass" -f Yellow
   winget install -e --id MongoDB.Compass.Community
-  Write-Host "Installing mongodb shell" -f Yellow
-  
-  mkdir .\mongodb
-  Invoke-WebRequest https://downloads.mongodb.com/compass/mongosh-1.8.2-win32-x64.zip -OutFile .\mongodb\mongosh.zip
-  Expand-Archive -Path .\mongodb\mongosh.zip -DestinationPath .\mongodb\bin
-  Rename-Item .\mongodb\bin -NewName "bin_old"
-  Move-Item .\mongodb\bin_old\mongosh-1.8.2-win32-x64\* .\mongodb\
-  Remove-Item .\mongodb\bin_old\mongosh-1.8.2-win32-x64 -Recurse
-  Remove-Item .\mongodb\mongosh.zip
 
-  $env:Path += ";$pwd\mongodb\bin"
+  Write-Host "MongoDB and MongoDB Compass installed" -f Green
+}
 
-  Write-Host "MongoDB, MongoDB Compass and MongoDB Shell installed" -f Green
+$ErrorActionPreference = 'SilentlyContinue'
+mongosh --version > $null 2>&1
+
+if ($?) {
+  Write-Host "mongosh already downloaded and in path" -f Green
+} else {
+  $ErrorActionPreference = 'SilentlyContinue'
+  Get-ChildItem ".\mongodb\bin\mongosh.exe" > $null 2>&1
+  $ErrorActionPreference = 'Continue'
+
+  if ($?) {
+    Write-Host "mongosh already downloaded" -f Green
+    Write-Host "Adding mongosh to path" -f Yellow
+    $env:Path += ";$pwd\mongodb\bin"
+    Write-Host "mongosh added to path" -f Green
+  } else {
+    Write-Host "Downloading mongodb shell" -f Yellow
+    
+    mkdir .\mongodb
+    Invoke-WebRequest https://downloads.mongodb.com/compass/mongosh-1.8.2-win32-x64.zip -OutFile .\mongodb\mongosh.zip
+    Expand-Archive -Path .\mongodb\mongosh.zip -DestinationPath .\mongodb\bin
+    Rename-Item .\mongodb\bin -NewName "bin_old"
+    Move-Item .\mongodb\bin_old\mongosh-1.8.2-win32-x64\* .\mongodb\
+    Remove-Item .\mongodb\bin_old\mongosh-1.8.2-win32-x64 -Recurse
+    Remove-Item .\mongodb\mongosh.zip
+
+    $env:Path += ";$pwd\mongodb\bin"
+
+    Write-Host "MongoDB shell downloaded and added to path" -f Green
+  }
 }
 
 $ErrorActionPreference = 'SilentlyContinue'
 Get-Service -Name "MongoDB" > $null 2>&1
-$ErrorActionPreference = 'Continue'
 
 if ($?) {
   Write-Host "MongoDB already running" -f Green
@@ -189,7 +204,6 @@ if ($?) {
 # check if database and collections exist and create if not
 $ErrorActionPreference = 'SilentlyContinue'
 mongosh --eval "db.getMongo()" > $null 2>&1
-$ErrorActionPreference = 'Continue'
 
 if ($?) {
   Write-Host "Mongo is Running" -f Green
