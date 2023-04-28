@@ -1,7 +1,69 @@
 #!/bin/bash
 
-echo "This script will install node, npm, pnpm, python3, and pip3."
-read -p "Do you wish to continue? (y/n) " yn
+terminalWidth=$(tput cols)
+
+function centerText() {
+    textLength=${#1}
+    spaces=$((terminalWidth-textLength-2))
+    leftSpaces=$((spaces/2))
+    rightSpaces=$((spaces-leftSpaces+2))
+
+    printf "\e[36m│\e[0m"
+    for ((i=1; i < $leftSpaces; i++)); do
+        printf " "
+    done
+    if [ "$3" = true ]; then
+        printf "\e[1;${2}m$1\e[0m"
+    else
+        printf "\e[${2}m$1\e[0m"
+    fi
+    for ((i=1; i < $rightSpaces; i++)); do
+        printf " "
+    done
+    printf "\e[36m│\e[0m\n"
+}
+
+function spaces() {
+    printf "\e[36m│\e[0m" 
+    for ((j=1; j < $terminalWidth - 1; j++)); do
+        printf " "
+    done
+    printf "\e[36m│\e[0m\n"
+}
+
+function topBorder() {
+    printf "\e[36m┌"
+    for ((i=1; i < $terminalWidth - 1; i++)); do
+        printf "─"
+    done
+    printf "┐\e[0m\n"
+}
+
+function bottomBorder() {
+    printf "\e[36m└"
+    for ((i=1; i < $terminalWidth - 1; i++)); do
+        printf "─"
+    done
+    printf "┘\e[0m\n"
+}
+
+clear
+
+topBorder
+spaces
+spaces
+spaces
+centerText "Home Api" "32" true
+spaces
+centerText "Welcome to the setup script for the project" "95"
+spaces
+spaces
+spaces
+bottomBorder
+
+printf "\n\e[33mThis script will install node, npm, pnpm, python3, and pip3.\nDo you wish to continue?\e[0m" -n
+read -p " (y/n): " yn
+
 case $yn in
     [Yy]* ) ;;
     [Nn]* ) exit;;
