@@ -203,13 +203,13 @@ if ($?) {
 
 # check if database and collections exist and create if not
 $ErrorActionPreference = 'SilentlyContinue'
-mongosh --eval "db.getMongo()" > $null 2>&1
+$output = mongosh --eval "db.getMongo()" --quiet
 
-if ($?) {
+if ($output -like "mongodb:*") {
   Write-Host "Mongo is Running" -f Green
 
   $ErrorActionPreference = 'SilentlyContinue'
-  $output = mongosh --eval "db.getMongo().getDBNames().indexOf('web')"
+  $output = mongosh --eval "db.getMongo().getDBNames().indexOf('web')" --quiet
   $ErrorActionPreference = 'Continue'
 
   if ($output -like "*-1") {
@@ -222,7 +222,7 @@ if ($?) {
     Write-Host "Checking if collections exist" -f Yellow
 
     $ErrorActionPreference = 'SilentlyContinue'
-    $output = mongosh web --eval "db.getCollectionNames().indexOf('config')"
+    $output = mongosh web --eval "db.getCollectionNames().indexOf('config')" --quiet
     $ErrorActionPreference = 'Continue'
 
     if ($output -like "*-1") {
