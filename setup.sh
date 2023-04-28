@@ -191,60 +191,8 @@ fi
 if which mongod >/dev/null ; then
     printGreen "mongodb is already installed."
 else
-    printYellow "Installing mongodb."
-    
-    # check if mongo.tgz exists
-    if [ -f "mongo.tgz" ]; then
-        printYellow "checking if mongo.tgz is a valid archive."
-    
-        if tar -tf mongo.tgz >/dev/null ; then
-            printGreen "mongo.tgz is a valid archive."
-
-            printYellow "installing mongodb."
-
-            tar -xzf mongo.tgz
-
-            sudo mkdir -p /var/mongodb
-            sudo mv mongodb*/* /var/mongodb/
-            sudo ln -nfs /var/mongodb/bin/mongod /usr/local/sbin
-
-            sudo mkdir -p /data/db
-            sudo mkdir -p /usr/local/mongodb/logs
-
-            cd /etc/init.d/
-
-            if which curl >/dev/null ; then
-                printYellow "Downloading via curl."
-                sudo curl http://gist.github.com/raw/162954/f5d6434099b192f2da979a0356f4ec931189ad07/gistfile1.sh
-            elif which wget >/dev/null ; then
-                printYellow "Downloading via wget."
-                sudo wget http://gist.github.com/raw/162954/f5d6434099b192f2da979a0356f4ec931189ad07/gistfile1.sh
-            else
-                printRed "Cannot download, neither wget nor curl is available."
-                exit 1
-            fi
-
-            sudo mv gistfile1.sh mongodb
-            sudo chmod +x mongodb
-
-            sudo update-rc.d mongodb 51 S .
-
-            sudo /etc/init.d/mongodb start
-            printGreen "mongodb is installed."
-        else
-            printRed "mongo.tgz is not a valid archive, please download it from https://www.mongodb.com/try/download/community place it in the same directory as this script, name it mongo.tgz and run this script again."
-            exit 1
-        fi
-    else
-        printRed "mongo.tgz does not exist, please download it from https://www.mongodb.com/try/download/community place it in the same directory as this script, name it mongo.tgz and run this script again."
-        exit 1
-    fi
-
-    if which mongod >/dev/null ; then
-        printGreen "mongodb is installed."
-    else
-        printRed "mongodb is not installed."
-    fi
+    printRed "mongodb is not installed. Please install it manually."
+    exit 1
 fi
 
 if ! pgrep -x "mongod" > /dev/null
