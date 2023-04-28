@@ -1,7 +1,17 @@
 <script lang="ts">
-  import { connectWebSocket, getLights, getPlugs } from '../api'
+  import PlusIcon from 'svelte-material-icons/Plus.svelte'
+
+  import {
+    connectWebSocket,
+    getLights,
+    getPlugs,
+    hueConfig,
+    hueInit,
+  } from '../api'
   import LightElement from '../components/+lightElement.svelte'
   import PlugElement from '../components/+plugElement.svelte'
+  import CustomButton from '../components/+customButton.svelte'
+  import Modal, { getModal } from '../components/+modal.svelte'
 
   let lights: { [key: string]: Light } = {}
   let plugs: { [key: string]: Plug } = {}
@@ -33,16 +43,40 @@
     }
   })
 
+  async function addHue() {
+    getModal('info-modal').close()
+    const ip = prompt(
+      'Enter the IP of your Hue Bridge, press the button and click OK'
+    )
+    const config = await hueConfig(ip)
+      .then(() => true)
+      .catch(() => false)
+
+    if (config) {
+      const init = await hueInit()
+        .then(() => true)
+        .catch(() => false)
+
+      if (init) {
+        loadDevices()
+        return
+      }
+    }
+    alert('Something went wrong')
+  }
+
   loadDevices()
 </script>
 
 <div class="m-4">
-  <button
-    class="block p-2 border-2 rounded-lg hover:bg-white/10 transition-all active:bg-white/20"
-    on:click={loadDevices}>Reload</button
-  >
+  <div class="flex space-x-2">
+    <CustomButton click={loadDevices}>Reload</CustomButton>
+    <CustomButton click={() => getModal('info-modal').open()}>
+      <PlusIcon slot="icon" class="me-1" /> Devices
+    </CustomButton>
+  </div>
   <h1 class="text-2xl font-bold mt-5">Lights</h1>
-  <div class="inline-flex justify-around mt-3">
+  <div class="inline-flex flex-wrap justify-start mt-3">
     {#each Object.entries(lights) as [_, light]}
       <LightElement {light} />
     {/each}
@@ -55,3 +89,12 @@
     {/each}
   </div>
 </div>
+
+<Modal id="info-modal">
+  <h1 slot="header" class="text-xl font-bold select-none">Add Devices</h1>
+  <div class="mt-5 items-start">
+    <div class="flex flex-col justify-center items-center">
+      <CustomButton click={addHue}>Hue</CustomButton>
+    </div>
+  </div>
+</Modal>

@@ -1,5 +1,10 @@
 lockfileVersion: '6.0'
 
+dependencies:
+  svelte-material-icons:
+    specifier: ^3.0.4
+    version: 3.0.4(svelte@3.57.0)
+
 devDependencies:
   '@sveltejs/vite-plugin-svelte':
     specifier: ^2.0.3
@@ -1048,6 +1053,14 @@ packages:
       svelte: 3.57.0
     dev: true
 
+  /svelte-material-icons@3.0.4(svelte@3.57.0):
+    resolution: {integrity: sha512-b126iWd/kMZgstYbGIocmGwN2txGFW+S+BY+d66yPRVSgcZgrnzRJWQbhn0OCy7dzzjkYfgI/i2PdWRukqu+RQ==}
+    peerDependencies:
+      svelte: ^3.0.0
+    dependencies:
+      svelte: 3.57.0
+    dev: false
+
   /svelte-preprocess@4.10.7(postcss@8.4.23)(svelte@3.57.0)(typescript@5.0.2):
     resolution: {integrity: sha512-sNPBnqYD6FnmdBrUmBCaqS00RyCsCpj2BG58A1JBswNF7b0OKviwxqVrOL/CKyJrLSClrSeqQv5BXNg2RUbPOw==}
     engines: {node: '>= 9.11.2'}
@@ -1103,7 +1116,6 @@ packages:
   /svelte@3.57.0:
     resolution: {integrity: sha512-WMXEvF+RtAaclw0t3bPDTUe19pplMlfyKDsixbHQYgCWi9+O9VN0kXU1OppzrB9gPAvz4NALuoca2LfW2bOjTQ==}
     engines: {node: '>= 8'}
-    dev: true
 
   /tailwindcss@3.3.2:
     resolution: {integrity: sha512-9jPkMiIBXvPc2KywkraqsUfbfj+dHDb+JPWtSJa9MLFdrPyazI7q6WX2sUrm7R9eVR7qqv3Pas7EvQFzxKnI6w==}

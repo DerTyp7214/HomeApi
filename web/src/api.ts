@@ -7,6 +7,7 @@ export const apiUrl = _apiUrl
 export const setApiUrl = (url: string) => {
   _apiUrl = url
   localStorage.setItem('apiUrl', url)
+  return localStorage.getItem('apiUrl')
 }
 
 export const checkApiUrl = async (count: number = 0) => {
@@ -14,14 +15,15 @@ export const checkApiUrl = async (count: number = 0) => {
     return false
   }
   try {
-    const res = await fetch(`${apiUrl}/status`)
-    if (res.ok) {
+    const res = await fetch(`${apiUrl}/status`).then((res) => res.json())
+    if (res.status === 'OK') {
       return true
     }
   } catch (e) {
     console.error(e)
   }
-  _apiUrl = prompt('API URL', _apiUrl)
+  console.log(_apiUrl, localStorage.getItem('apiUrl'))
+  setApiUrl(prompt('API URL', _apiUrl))
   return checkApiUrl(count + 1)
 }
 
@@ -83,6 +85,33 @@ export const setPlug = async (id: string, state: PlugInput) => {
     return res.json()
   }
   throw new Error('Failed to set plug')
+}
+
+export const hueConfig = async (ip: string) => {
+  const res = await fetch(`${apiUrl}/hue/config`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ host: ip }),
+  })
+  if (res.ok) {
+    return true
+  }
+  throw new Error('Failed to set config')
+}
+
+export const hueInit = async () => {
+  const res = await fetch(`${apiUrl}/hue/init`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  if (res.ok) {
+    return res.json()
+  }
+  throw new Error('Failed to init hue')
 }
 
 export const connectWebSocket = () => {

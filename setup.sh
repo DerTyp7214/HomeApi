@@ -1,7 +1,81 @@
 #!/bin/bash
 
-echo "This script will install node, npm, pnpm, python3, and pip3."
-read -p "Do you wish to continue? (y/n) " yn
+terminalWidth=$(tput cols)
+
+function printGreen() {
+    printf "\e[32m$1\e[0m\n"
+}
+
+function printRed() {
+    printf "\e[31m$1\e[0m\n"
+}
+
+function printYellow() {
+    printf "\e[33m$1\e[0m\n"
+}
+
+function centerText() {
+    textLength=${#1}
+    spaces=$((terminalWidth-textLength-2))
+    leftSpaces=$((spaces/2))
+    rightSpaces=$((spaces-leftSpaces+2))
+
+    printf "\e[36m│\e[0m"
+    for ((i=1; i < $leftSpaces; i++)); do
+        printf " "
+    done
+    if [ "$3" = true ]; then
+        printf "\e[1;${2}m$1\e[0m"
+    else
+        printf "\e[${2}m$1\e[0m"
+    fi
+    for ((i=1; i < $rightSpaces; i++)); do
+        printf " "
+    done
+    printf "\e[36m│\e[0m\n"
+}
+
+function spaces() {
+    printf "\e[36m│\e[0m" 
+    for ((j=1; j < $terminalWidth - 1; j++)); do
+        printf " "
+    done
+    printf "\e[36m│\e[0m\n"
+}
+
+function topBorder() {
+    printf "\e[36m┌"
+    for ((i=1; i < $terminalWidth - 1; i++)); do
+        printf "─"
+    done
+    printf "┐\e[0m\n"
+}
+
+function bottomBorder() {
+    printf "\e[36m└"
+    for ((i=1; i < $terminalWidth - 1; i++)); do
+        printf "─"
+    done
+    printf "┘\e[0m\n"
+}
+
+clear
+
+topBorder
+spaces
+spaces
+spaces
+centerText "Home Api" "32" true
+spaces
+centerText "Welcome to the setup script for the project" "95"
+spaces
+spaces
+spaces
+bottomBorder
+
+printf "\n\e[33mThis script will install node, npm, pnpm, python3, and pip3.\nDo you wish to continue?\e[0m" -n
+read -p " (y/n): " yn
+
 case $yn in
     [Yy]* ) ;;
     [Nn]* ) exit;;
@@ -9,9 +83,9 @@ case $yn in
 esac
 
 if which node >/dev/null ; then
-    echo "node is already installed."
+    printGreen "node is already installed."
 else
-    echo "Installing node."
+    printYellow "Installing node."
 
     if [ -x "$(command -v apt-get)" ]; then
     sudo apt-get update
@@ -28,69 +102,69 @@ else
         sudo brew install node
 
     else
-        echo "Unable to determine package manager for this system"
+        printRed "Unable to determine package manager for this system"
         exit 1
     fi
 
     if [ -x "$(command -v node)" ] && [ -x "$(command -v npm)" ]; then
-        echo "Node.js and npm were installed successfully"
+        printGreen "Node.js and npm were installed successfully"
     else
-        echo "Node.js and/or npm were not installed successfully"
+        printRed "Node.js and/or npm were not installed successfully"
     fi
 fi
 
 
 if which pnpm >/dev/null ; then
-    echo "pnpm is already installed."
+    printGreen "pnpm is already installed."
 else
-    echo "Installing pnpm."
+    printYellow "Installing pnpm."
 
     if which curl >/dev/null ; then
-        echo "Downloading via curl."
+        printYellow "Downloading via curl."
         curl -fsSL https://get.pnpm.io/install.sh | sh -
     elif which wget >/dev/null ; then
-        echo "Downloading via wget."
+        printYellow "Downloading via wget."
         wget -qO- https://get.pnpm.io/install.sh | sh -
     else
-        echo "Cannot download, neither wget nor curl is available."
+        printRed "Cannot download, neither wget nor curl is available."
         exit 1
     fi
 
     source ~/.bashrc
-    echo "pnpm is installed."
+    printGreen "pnpm is installed."
 fi
 
 if which python3 >/dev/null ; then
-    echo "python3 is already installed."
+    printGreen "python3 is already installed."
 else
-    echo "Installing python3."
+    printYellow "Installing python3."
 
     if which curl >/dev/null ; then
-        echo "Downloading via curl."
+        printYellow "Downloading via curl."
         curl -fsSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
     elif which wget >/dev/null ; then
-        echo "Downloading via wget."
+        printYellow "Downloading via wget."
         wget -qO- https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
     else
-        echo "Cannot download, neither wget nor curl is available."
+        printRed "Cannot download, neither wget nor curl is available."
         exit 1
     fi
 
-    echo "python3 is installed."
+    printGreen "python3 is installed."
 fi
 
 if which pip3 >/dev/null ; then
-    echo "pip3 is already installed."
+    printGreen "pip3 is already installed."
 elif which ~/.local/bin/pip3 >/dev/null ; then
-    echo "pip3 is already installed."
-    echo "adding ~/.local/bin to PATH"
+    printGreen "pip3 is already installed."
+    printYellow "adding ~/.local/bin to PATH"
 
     if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
         if cat ~/.bashrc | grep "# LOCAL_BIN_PATH" > /dev/null ; then
-            echo "LOCAL_BIN_PATH is already in .bashrc"
+            printGreen "LOCAL_BIN_PATH is already in .bashrc"
             source ~/.bashrc
         else
-            echo "adding LOCAL_BIN_PATH to .bashrc"
+            printYellow "adding LOCAL_BIN_PATH to .bashrc"
             echo "" >> ~/.bashrc
             echo "# LOCAL_BIN_PATH" >> ~/.bashrc
             echo "export PATH=$PATH:$HOME/.local/bin" >> ~/.bashrc
@@ -98,22 +172,66 @@ elif which ~/.local/bin/pip3 >/dev/null ; then
         fi
     fi
 else
-    echo "Installing pip3."
+    printYellow "Installing pip3."
 
     if which curl >/dev/null ; then
-        echo "Downloading via curl."
+        printYellow "Downloading via curl."
         curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3 -
     elif which wget >/dev/null ; then
-        echo "Downloading via wget."
+        printYellow "Downloading via wget."
         wget -qO- https://bootstrap.pypa.io/get-pip.py | python3 -
     else
-        echo "Cannot download, neither wget nor curl is available."
+        printRed "Cannot download, neither wget nor curl is available."
         exit 1
     fi
 
     echo "pip3 is installed."
 fi
 
+if which mongosh >/dev/null ; then
+    printGreen "mongosh is already installed."
+else
+    printRed "mongosh is not installed. Please install it manually."
+    exit 1
+fi
+
+if which mongod >/dev/null ; then
+    printGreen "mongod is already installed."
+else
+    printRed "mongod is not installed. Please install it manually."
+    exit 1
+fi
+
+if ! pgrep -x "mongod" > /dev/null
+then
+    printYellow "mongodb is not running, starting it."
+    sudo systemctl start mongod
+else
+    printGreen "mongodb is running."
+fi
+
+if [[ $(mongosh --eval "db.getMongo()" --quiet) == mongodb:* ]]; then
+    printGreen "mongodb is running."
+
+    if [[ $(mongosh --eval "db.getMongo().getDBNames().indexOf('web')" --quiet) != *-1 ]]; then
+        printGreen "database 'web' exists."
+
+        if [[ $(mongosh web --eval "db.getCollectionNames().indexOf('config')" --quiet) != *-1 ]]; then
+            printGreen "collection 'config' exists."
+        else
+            printYellow "collection 'config' does not exist, creating it."
+            mongosh web --eval "db.createCollection('config')" --quiet
+        fi
+    else
+        printYellow "database 'web' does not exist, creating it."
+        mongosh web --eval "db.createCollection('config')" --quiet
+    fi
+else
+    printRed "mongodb is not running."
+    exit 1
+fi
+
+printYellow "Installing dependencies."
 
 pnpm install
 pnpm install:api
