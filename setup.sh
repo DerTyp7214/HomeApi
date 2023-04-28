@@ -188,10 +188,10 @@ else
     echo "pip3 is installed."
 fi
 
-if which mongo >/dev/null ; then
-    printGreen "mongo is already installed."
+if which mongosh >/dev/null ; then
+    printGreen "mongosh is already installed."
 else
-    printRed "mongo is not installed. Please install it manually."
+    printRed "mongosh is not installed. Please install it manually."
     exit 1
 fi
 
@@ -210,21 +210,21 @@ else
     printGreen "mongodb is running."
 fi
 
-if mongo --eval "db.getMongo()" >/dev/null ; then
+if mongosh --eval "db.getMongo()" >/dev/null ; then
     printGreen "mongodb is running."
 
-    if mongo --eval "db.getMongo().getDBNames().indexOf('web')" >/dev/null ; then
+    if mongosh --eval "db.getMongo().getDBNames().indexOf('web')" >/dev/null ; then
         printGreen "database 'web' exists."
 
-        if mongo web --eval "db.getCollectionNames().indexOf('config')" >/dev/null ; then
+        if mongosh web --eval "db.getCollectionNames().indexOf('config')" >/dev/null ; then
             printGreen "collection 'config' exists."
         else
             printYellow "collection 'config' does not exist, creating it."
-            mongo web --eval "db.createCollection('config')"
+            mongosh web --eval "db.createCollection('config')"
         fi
     else
         printYellow "database 'web' does not exist, creating it."
-        mongo web --eval "db.createCollection('config')"
+        mongosh web --eval "db.createCollection('config')"
     fi
 else
     printRed "mongodb is not running."
