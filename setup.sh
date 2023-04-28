@@ -227,6 +227,7 @@ if mongo --eval "db.getMongo()" >/dev/null ; then
     else
         printYellow "database 'web' does not exist, creating it."
         mongo web --eval "db.createCollection('config')"
+    fi
 else
     printRed "mongodb is not running."
     exit 1
