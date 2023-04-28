@@ -210,21 +210,21 @@ else
     printGreen "mongodb is running."
 fi
 
-if mongosh --eval "db.getMongo()" >/dev/null ; then
+if [[ $(mongosh --eval "db.getMongo()" --quiet) == mongodb:* ]]; then
     printGreen "mongodb is running."
 
-    if [[ $(mongosh --eval "db.getMongo().getDBNames().indexOf('web')") != *-1 ]]; then
+    if [[ $(mongosh --eval "db.getMongo().getDBNames().indexOf('web')" --quiet) != *-1 ]]; then
         printGreen "database 'web' exists."
 
-        if [[ $(mongosh web --eval "db.getCollectionNames().indexOf('config')") != *-1 ]]; then
+        if [[ $(mongosh web --eval "db.getCollectionNames().indexOf('config')" --quiet) != *-1 ]]; then
             printGreen "collection 'config' exists."
         else
             printYellow "collection 'config' does not exist, creating it."
-            mongosh web --eval "db.createCollection('config')"
+            mongosh web --eval "db.createCollection('config')" --quiet
         fi
     else
         printYellow "database 'web' does not exist, creating it."
-        mongosh web --eval "db.createCollection('config')"
+        mongosh web --eval "db.createCollection('config')" --quiet
     fi
 else
     printRed "mongodb is not running."
