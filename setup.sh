@@ -188,10 +188,19 @@ else
     echo "pip3 is installed."
 fi
 
-if which mongod >/dev/null ; then
-    printGreen "mongodb is already installed."
+if 
+
+if which mongo >/dev/null ; then
+    printGreen "mongo is already installed."
 else
-    printRed "mongodb is not installed. Please install it manually."
+    printRed "mongo is not installed. Please install it manually."
+    exit 1
+fi
+
+if which mongod >/dev/null ; then
+    printGreen "mongod is already installed."
+else
+    printRed "mongod is not installed. Please install it manually."
     exit 1
 fi
 
