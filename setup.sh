@@ -73,7 +73,7 @@ spaces
 spaces
 bottomBorder
 
-printf "\n\e[33mThis script will install node, npm, pnpm, mongodb, python3, and pip3.\nDo you wish to continue?\e[0m" -n
+printf "\n\e[33mThis script will install node, npm, pnpm, python3, and pip3.\nDo you wish to continue?\e[0m" -n
 read -p " (y/n): " yn
 
 case $yn in
