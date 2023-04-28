@@ -2,11 +2,9 @@
   import InfoIcon from 'svelte-material-icons/Information.svelte'
 
   import { setPlug } from '../api'
-  import Modal from './+modal.svelte'
+  import Modal, { getModal } from './+modal.svelte'
 
   export let plug: Plug
-
-  let showModal = false
 
   async function togglePlug() {
     plug = await setPlug(plug.id, { on: !plug.on })
@@ -29,7 +27,7 @@
       event.preventDefault()
       event.stopPropagation()
 
-      showModal = true
+      getModal(`modal-${plug.name}`).open()
     }}
   >
     <InfoIcon />
@@ -38,7 +36,7 @@
   <h1 class="text-lg font-bold select-none">{plug.on ? 'ON' : 'OFF'}</h1>
 </div>
 
-<Modal bind:showModal>
+<Modal id={`modal-${plug.name}`}>
   <h1 slot="header" class="text-xl font-bold select-none">
     {plug.name}
   </h1>

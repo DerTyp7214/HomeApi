@@ -87,6 +87,33 @@ export const setPlug = async (id: string, state: PlugInput) => {
   throw new Error('Failed to set plug')
 }
 
+export const hueConfig = async (ip: string) => {
+  const res = await fetch(`${apiUrl}/hue/config`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ host: ip }),
+  })
+  if (res.ok) {
+    return true
+  }
+  throw new Error('Failed to set config')
+}
+
+export const hueInit = async () => {
+  const res = await fetch(`${apiUrl}/hue/init`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  if (res.ok) {
+    return res.json()
+  }
+  throw new Error('Failed to init hue')
+}
+
 export const connectWebSocket = () => {
   const ws = new WebSocket(`ws://${window.location.host}/ws`)
   ws.addEventListener('open', () => {

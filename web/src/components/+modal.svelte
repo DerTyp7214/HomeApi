@@ -1,17 +1,29 @@
+<script lang="ts" context="module">
+  const modals = {}
+
+  export function getModal(id = '') {
+    return modals[id]
+  }
+</script>
+
 <script>
   import CloseIcon from 'svelte-material-icons/Close.svelte'
 
-  export let showModal
+  export let id = ''
 
   let dialog
 
-  $: if (dialog && showModal) dialog.showModal()
+  $: if (dialog) {
+    modals[id] = {
+      close: () => dialog.close(),
+      open: () => dialog.showModal(),
+    }
+  }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <dialog
   bind:this={dialog}
-  on:close={() => (showModal = false)}
   on:click|self={() => dialog.close()}
 >
   <div on:click|stopPropagation class="relative">

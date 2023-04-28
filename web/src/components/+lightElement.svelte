@@ -3,11 +3,9 @@
 
   import { setLight } from '../api'
   import { HSBToRGB, RGBToHEX } from '../utils'
-  import Modal from './+modal.svelte'
+  import Modal, { getModal } from './+modal.svelte'
 
   export let light: Light
-
-  let showModal = false
 
   $: color = RGBToHEX(
     HSBToRGB(light.color.hue, light.color.saturation, light.on ? 0.5 : 0)
@@ -32,7 +30,7 @@
       event.preventDefault()
       event.stopPropagation()
 
-      showModal = true
+      getModal(`modal-${light.name}`).open()
     }}
   >
     <InfoIcon />
@@ -41,7 +39,7 @@
   <h1 class="text-lg font-bold select-none">{light.on ? 'ON' : 'OFF'}</h1>
 </div>
 
-<Modal bind:showModal>
+<Modal id={`modal-${light.name}`}>
   <h1 slot="header" class="text-xl font-bold select-none">
     {light.name}
   </h1>
