@@ -205,7 +205,7 @@ fi
 if ! pgrep -x "mongod" > /dev/null
 then
     printYellow "mongodb is not running, starting it."
-    sudo systemctl start mongodb
+    sudo systemctl start mongod
 else
     printGreen "mongodb is running."
 fi
@@ -213,10 +213,10 @@ fi
 if mongosh --eval "db.getMongo()" >/dev/null ; then
     printGreen "mongodb is running."
 
-    if mongosh --eval "db.getMongo().getDBNames().indexOf('web')" >/dev/null ; then
+    if [[ $(mongosh --eval "db.getMongo().getDBNames().indexOf('web')") != *-1 ]]; then
         printGreen "database 'web' exists."
 
-        if mongosh web --eval "db.getCollectionNames().indexOf('config')" >/dev/null ; then
+        if [[ $(mongosh web --eval "db.getCollectionNames().indexOf('config')") != *-1 ]]; then
             printGreen "collection 'config' exists."
         else
             printYellow "collection 'config' does not exist, creating it."
