@@ -192,23 +192,51 @@ if which mongod >/dev/null ; then
     printGreen "mongodb is already installed."
 else
     printYellow "Installing mongodb."
+    
+    # check if mongo.tgz exists
+    if [ -f "mongo.tgz" ]; then
+        printYellow "checking if mongo.tgz is a valid archive."
+    
+        if tar -tf mongo.tgz >/dev/null ; then
+            printGreen "mongo.tgz is a valid archive."
 
-    if [ -x "$(command -v apt-get)" ]; then
-        sudo apt-get update
+            printYellow "installing mongodb."
 
-        sudo apt-get install -y mongodb
+            tar -xzf mongo.tgz
 
-    elif [ -x "$(command -v pacman)" ]; then
-        sudo pacman -S mongodb
+            mkdir -p /var/mongodb
+            mv mongodb*/* /var/mongodb/
+            ln -nfs /var/mongodb/bin/mongod /usr/local/sbin
 
-    elif [ -x "$(command -v pkg)" ]; then
-        sudo pkg install mongodb
+            mkdir -p /data/db
+            mkdir -p /usr/local/mongodb/logs
 
-    elif [ -x "$(command -v brew)" ]; then
-        sudo brew install mongodb
+            cd /etc/init.d/
 
+            if which curl >/dev/null ; then
+                printYellow "Downloading via curl."
+                curl http://gist.github.com/raw/162954/f5d6434099b192f2da979a0356f4ec931189ad07/gistfile1.sh
+            elif which wget >/dev/null ; then
+                printYellow "Downloading via wget."
+                wget http://gist.github.com/raw/162954/f5d6434099b192f2da979a0356f4ec931189ad07/gistfile1.sh
+            else
+                printRed "Cannot download, neither wget nor curl is available."
+                exit 1
+            fi
+
+            mv gistfile1.sh mongodb
+            chmod +x mongodb
+
+            update-rc.d mongodb 51 S .
+
+            /etc/init.d/mongodb start
+            printGreen "mongodb is installed."
+        else
+            printRed "mongo.tgz is not a valid archive, please download it from https://www.mongodb.com/try/download/community place it in the same directory as this script, name it mongo.tgz and run this script again."
+            exit 1
+        fi
     else
-        printRed "Unable to determine package manager for this system"
+        printRed "mongo.tgz does not exist, please download it from https://www.mongodb.com/try/download/community place it in the same directory as this script, name it mongo.tgz and run this script again."
         exit 1
     fi
 
