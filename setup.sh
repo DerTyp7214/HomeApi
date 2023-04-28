@@ -188,8 +188,6 @@ else
     echo "pip3 is installed."
 fi
 
-if 
-
 if which mongo >/dev/null ; then
     printGreen "mongo is already installed."
 else
