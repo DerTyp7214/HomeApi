@@ -7,6 +7,7 @@
     getPlugs,
     hueConfig,
     hueInit,
+    hueDelete
   } from '../api'
   import LightElement from '../components/+lightElement.svelte'
   import PlugElement from '../components/+plugElement.svelte'
@@ -48,18 +49,18 @@
     const ip = prompt(
       'Enter the IP of your Hue Bridge, press the button and click OK'
     )
-    const config = await hueConfig(ip)
-      .then(() => true)
-      .catch(() => false)
+    const config = await hueConfig(ip).catch(() => null)
 
     if (config) {
-      const init = await hueInit()
+      const init = await hueInit(config.id)
         .then(() => true)
         .catch(() => false)
 
       if (init) {
         loadDevices()
         return
+      } else {
+        await hueDelete(config.id)
       }
     }
     alert('Something went wrong')

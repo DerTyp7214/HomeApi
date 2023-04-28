@@ -23,7 +23,8 @@ def allPlugs() -> list[Plug]:
 def getLight(id: str):
     try:
         if id.startswith("hue-"):
-            return getHueLight(int(id.replace("hue-", "")))
+            bridge_id, light_id = id.replace("hue-", "").split("-")
+            return getHueLight(bridge_id, int(light_id))
         return allLights()[int(id)]
     except ValueError:
         return None
@@ -34,7 +35,8 @@ def getLight(id: str):
 def getPlug(id: str):
     try:
         if id.startswith("hue-"):
-            return getHuePlug(int(id.replace("hue-", "")))
+            bridge_id, plug_id = id.replace("hue-", "").split("-")
+            return getHuePlug(bridge_id, int(plug_id))
         return allPlugs()[int(id)]
     except ValueError:
         return None
@@ -45,7 +47,8 @@ def getPlug(id: str):
 def setLightState(id: str, state: LightState):
     try:
         if id.startswith("hue-"):
-            response = setHueLightState(int(id.replace("hue-", "")), state)
+            bridge_id, light_id = id.replace("hue-", "").split("-")
+            response = setHueLightState(bridge_id, int(light_id), state)
             if response is None:
                 return JSONResponse(status_code=404, content={"error": "Light not found"})
             return response
@@ -57,7 +60,8 @@ def setLightState(id: str, state: LightState):
 def setPlugState(id: str, state: PlugState):
     try:
         if id.startswith("hue-"):
-            response = setHueLightState(int(id.replace("hue-", "")), state)
+            bridge_id, plug_id = id.replace("hue-", "").split("-")
+            response = setHueLightState(bridge_id, int(plug_id), state)
             if response is None:
                 return JSONResponse(status_code=404, content={"error": "Plug not found"})
             return response

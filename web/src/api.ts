@@ -88,21 +88,35 @@ export const setPlug = async (id: string, state: PlugInput) => {
 }
 
 export const hueConfig = async (ip: string) => {
-  const res = await fetch(`${apiUrl}/hue/config`, {
-    method: 'PATCH',
+  const res = await fetch(`${apiUrl}/hue/config/add`, {
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json'
     },
     body: JSON.stringify({ host: ip }),
   })
   if (res.ok) {
-    return true
+    return await res.json()
   }
   throw new Error('Failed to set config')
 }
 
-export const hueInit = async () => {
-  const res = await fetch(`${apiUrl}/hue/init`, {
+export const hueDelete = async (bridgeId: string) => {
+  const res = await fetch(`${apiUrl}/hue/config/${bridgeId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  if (res.ok) {
+    return true
+  }
+  throw new Error('Failed to delete config')
+}
+
+export const hueInit = async (bridgeId: string) => {
+  const res = await fetch(`${apiUrl}/hue/init/${bridgeId}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

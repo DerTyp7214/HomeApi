@@ -12,12 +12,12 @@ router = APIRouter(
 )
 
 
-def mapLight(light, id: int) -> Light | None:
+def mapLight(bridge_id: str, light, id: int) -> Light | None:
     if "colormode" not in light["state"]:
         return None
 
     light = {
-        "id": f"hue-{id}",
+        "id": f"hue-{bridge_id}-{id}",
         "name": light["name"],
         "on": light["state"]["on"],
         "brightness": float(light["state"]["bri"]) / 255,
@@ -37,12 +37,12 @@ def mapLight(light, id: int) -> Light | None:
     return Light.from_dict(light)
 
 
-def mapPlug(plug, id: int) -> Plug | None:
+def mapPlug(bridge_id: str, plug, id: int) -> Plug | None:
     if plug["config"]["archetype"] != "plug":
         return None
 
     new_plug = {
-        "id": f"hue-{id}",
+        "id": f"hue-{bridge_id}-{id}",
         "name": plug["name"],
         "on": plug["state"]["on"],
         "reachable": plug["state"]["reachable"],
@@ -57,8 +57,9 @@ def mapPlug(plug, id: int) -> Plug | None:
     return Plug.from_dict(new_plug)
 
 
-def getLights():
-    user, host = config.get_hue_user(), config.get_hue_host()
+def getLightsBride(bride_id: str):
+    user, host = config.get_hue_bridge_user(
+        bride_id), config.get_hue_bridge_host(bride_id)
     if host == "" or user == "":
         return []
     lights = requests.get(
@@ -66,18 +67,29 @@ def getLights():
     return lights.json()
 
 
+def getLights():
+    bridges = config.get_hue_bridges()
+    lights = {}
+    for bridge in bridges:
+        lights.update(getLightsBride(bridge))
+    return lights
+
+
 def getNormalizedLights():
-    lights = getLights()
+    bridges = config.get_hue_bridges()
     normalizedLights = []
-    for light in lights:
-        normalized = mapLight(lights[light], light)
-        if normalized is not None:
-            normalizedLights.append(normalized)
+    for bridge in bridges:
+        lights = getLightsBride(bridge)
+        for light in lights:
+            normalized = mapLight(bridge, lights[light], light)
+            if normalized is not None:
+                normalizedLights.append(normalized)
     return normalizedLights
 
 
-def getLight(id: int):
-    user, host = config.get_hue_user(), config.get_hue_host()
+def getLight(bridge_id: str, id: int):
+    user, host = config.get_hue_bridge_user(
+        bridge_id), config.get_hue_bridge_host(bridge_id)
     if host == "" or user == "":
         return None
     light = requests.get(
@@ -85,46 +97,59 @@ def getLight(id: int):
     return light.json()
 
 
-def getNormalizedLight(id: int):
-    light = getLight(id)
-    normalizedLight = mapLight(light, id)
+def getNormalizedLight(bridge_id: str, id: int):
+    light = getLight(bridge_id, id)
+    normalizedLight = mapLight(bridge_id, light, id)
     return normalizedLight
+
+
+def getPlugsBride(bridge_id: str):
+    lights = getLightsBride(bridge_id)
+    plugs = {}
+    for light in lights:
+        if lights[light].get("config", {}).get("archetype") == "plug":
+            plugs[light] = lights[light]
+    return plugs
 
 
 def getPlugs():
     lights = getLights()
     plugs = {}
     for light in lights:
-        normalized = mapPlug(lights[light], light)
-        if normalized is not None:
-            plugs[light] = normalized
+        if lights[light].get("config", {}).get("archetype") == "plug":
+            plugs[light] = lights[light]
     return plugs
 
 
 def getNormalizedPlugs():
-    plugs = getPlugs()
+    bridges = config.get_hue_bridges()
     normalizedPlugs = []
-    for plug in plugs:
-        normalizedPlugs.append(plugs[plug])
+    for bridge in bridges:
+        plugs = getPlugsBride(bridge)
+        for plug in plugs:
+            normalized = mapPlug(bridge, plugs[plug], plug)
+            if normalized is not None:
+                normalizedPlugs.append(normalized)
     return normalizedPlugs
 
 
-def getPlug(id: int):
-    plug = getLight(id)
+def getPlug(bridge_id: str, id: int):
+    plug = getLight(bridge_id, id)
     if plug is None or plug["config"]["archetype"] != "plug":
         return None
     return plug
 
 
-def getNormalizedPlug(id: int):
-    plug = getPlug(id)
+def getNormalizedPlug(bridge_id: str, id: int):
+    plug = getPlug(bridge_id, id)
     if plug is None:
         return None
-    return mapPlug(plug, id)
+    return mapPlug(bridge_id, plug, id)
 
 
-def setLightState(id: int, state: HueLightState):
-    user, host = config.get_hue_user(), config.get_hue_host()
+def setLightState(bridge_id: str, id: int, state: HueLightState):
+    user, host = config.get_hue_bridge_user(
+        bridge_id), config.get_hue_bridge_host(bridge_id)
     if host == "" or user == "":
         return None
 
@@ -132,7 +157,7 @@ def setLightState(id: int, state: HueLightState):
         f"http://{host}/api/{user}/lights/{id}/state", json=state.to_dict())
 
 
-def setLightStateNormalized(id: int, state: LightState):
+def setLightStateNormalized(bridge_id: str, id: int, state: LightState):
     new_state = HueLightState.from_dict({})
 
     if state.color is not None:
@@ -146,22 +171,30 @@ def setLightStateNormalized(id: int, state: LightState):
     if state.brightness is not None:
         new_state.bri = state.brightness * 255
 
-    return setLightState(id, new_state)
+    return setLightState(bridge_id, id, new_state)
 
 
-@router.patch("/config")
+class NewBridge(BaseModel):
+    id: str
+
+
+@router.put("/config/add", responses={200: {"model": NewBridge}, 400: {"model": str}})
 def set_config(new_config: HueConfig):
-    config.set_hue(host=new_config.host, user=new_config.user)
-    return Response(status_code=200)
+    success, id = config.add_hue_bridge(new_config.host, new_config.user)
+
+    if success:
+        return JSONResponse(status_code=200, content={"id": id})
+
+    return Response(status_code=400, content="Bridge already added")
 
 
 class UserResponse(BaseModel):
     username: str
 
 
-@router.get("/init", responses={200: {"model": UserResponse}, 400: {"model": str}})
-def hue_init():
-    host = config.get_hue_host()
+@router.get("/init/{bridge_id}", responses={200: {"model": UserResponse}, 400: {"model": str}})
+def hue_init(bridge_id: str):
+    host = config.get_hue_bridge_host(bridge_id)
     if host == "":
         return Response(status_code=400, content="No host set")
 
@@ -176,9 +209,16 @@ def hue_init():
 
     user = userRequest.json()[0].get("success").get("username")
 
-    config.set_hue_user(user)
+    config.set_hue_bridge_user(bridge_id, user)
 
     return JSONResponse(status_code=200, content={"username": user})
+
+
+@router.delete("/config/{bridge_id}")
+def delete_config(bridge_id: str):
+    if config.remove_hue_bridge(bridge_id):
+        return Response(status_code=200)
+    return Response(status_code=400)
 
 
 @router.get("/lights", response_model=dict[str, HueLightResponse])
@@ -186,17 +226,22 @@ def get_lights():
     return JSONResponse(status_code=200, content=getLights())
 
 
-@router.get("/lights/{id}", response_model=HueLightResponse)
-def get_light(id: int):
-    return JSONResponse(status_code=200, content=getLight(id))
+@router.get("/lights/{bridge_id}", response_model=dict[str, HueLightResponse])
+def get_lights_bridge(bridge_id: str):
+    return JSONResponse(status_code=200, content=getLightsBride(bridge_id))
 
 
-@router.put("/lights/{id}/state", response_model=dict)
-async def set_light_state(id: int, state: HueLightState):
-    response = setLightState(id, state)
+@router.get("/lights/{bridge_id}/{id}", response_model=HueLightResponse)
+def get_light(bridge_id: str, id: int):
+    return JSONResponse(status_code=200, content=getLight(bridge_id, id))
+
+
+@router.put("/lights/{bridge_id}/{id}/state", response_model=dict)
+async def set_light_state(bridge_id: str, id: int, state: HueLightState):
+    response = setLightState(bridge_id, id, state)
 
     try:
-        light = getLight(id)
+        light = getLight(bridge_id, id)
         if light is not None:
             await broadcast(WebSocketMessage(
                 type="light",
@@ -219,21 +264,26 @@ def get_plugs():
     return JSONResponse(status_code=200, content=getPlugs())
 
 
-@router.get("/plugs/{id}", response_model=HuePlugResponse)
-def get_plug(id: int):
-    plug = getPlug(id)
+@router.get("/plugs/{bridge_id}", response_model=dict[str, HuePlugResponse])
+def get_plugs_bridge(bridge_id: str):
+    return JSONResponse(status_code=200, content=getPlugsBride(bridge_id))
+
+
+@router.get("/plugs/{bridge_id}/{id}", response_model=HuePlugResponse)
+def get_plug(bridge_id: str, id: int):
+    plug = getPlug(bridge_id, id)
     if plug is None:
         return Response(status_code=404, content="Plug not found")
 
-    return JSONResponse(status_code=200, content=plug)
+    return JSONResponse(status_code=200, content=plug.to_dict())
 
 
-@router.put("/plugs/{id}/state", response_model=dict)
-async def set_plug_state(id: int, state: HuePlugState):
-    response = setLightState(id, state)
+@router.put("/plugs/{bridge_id}/{id}/state", response_model=dict)
+async def set_plug_state(bridge_id: str, id: int, state: HuePlugState):
+    response = setLightState(bridge_id, id, state)
 
     try:
-        plug = getPlug(id)
+        plug = getPlug(bridge_id, id)
         if plug is not None:
             await broadcast(WebSocketMessage(
                 type="plug",
