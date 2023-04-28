@@ -7,6 +7,7 @@ export const apiUrl = _apiUrl
 export const setApiUrl = (url: string) => {
   _apiUrl = url
   localStorage.setItem('apiUrl', url)
+  return localStorage.getItem('apiUrl')
 }
 
 export const checkApiUrl = async (count: number = 0) => {
@@ -14,14 +15,15 @@ export const checkApiUrl = async (count: number = 0) => {
     return false
   }
   try {
-    const res = await fetch(`${apiUrl}/status`)
-    if (res.ok) {
+    const res = await fetch(`${apiUrl}/status`).then((res) => res.json())
+    if (res.status === 'OK') {
       return true
     }
   } catch (e) {
     console.error(e)
   }
-  _apiUrl = prompt('API URL', _apiUrl)
+  console.log(_apiUrl, localStorage.getItem('apiUrl'))
+  setApiUrl(prompt('API URL', _apiUrl))
   return checkApiUrl(count + 1)
 }
 

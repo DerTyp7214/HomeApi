@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import requests
 
 from api.consts import HueConfig, HueLightResponse, HueLightState, HuePlugResponse, HuePlugState, Light, LightState, Plug, WebSocketMessage, broadcast
-from api.config import config
+from api.config import config_db as config
 
 router = APIRouter(
     tags=["hue"],
@@ -152,7 +152,7 @@ def setLightStateNormalized(id: int, state: LightState):
 
 @router.patch("/config")
 def set_config(new_config: HueConfig):
-    config.hue = new_config
+    config.set_hue(host=new_config.host, user=new_config.user)
     return Response(status_code=200)
 
 

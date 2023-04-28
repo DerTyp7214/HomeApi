@@ -1,7 +1,7 @@
 from urllib.parse import unquote
 from fastapi import APIRouter, Response
 import requests
-from api.config import config
+from api.config import config_db as config
 from api.consts import Wled, WledItem, WledState
 from fastapi.responses import JSONResponse
 

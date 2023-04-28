@@ -22,29 +22,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-static_router = Router()
-
-static_router.mount(
-    "/", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "dist"), html=True), name="dist")
-
-app.mount("/static", static_router, name="static")
+    
 app.include_router(main.router, prefix="/api")
 app.include_router(hue.router, prefix="/api/hue")
 app.include_router(wled.router, prefix="/api/wled")
 
+dist = os.path.join(os.path.dirname(__file__), "dist")
 
-@app.get("/")
-def root():
-    return RedirectResponse(url="/static")
+if os.path.exists(dist):
+    static_router = Router()
+    static_router.mount("/", StaticFiles(directory=dist, html=True), name="dist")
+    app.mount("/static", static_router, name="static")
 
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            await websocket.receive_text()
-            await websocket.send_text(f"asd")
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+    @app.get("/")
+    def root():
+        return RedirectResponse(url="/static")
+
+
+    @app.websocket("/ws")
+    async def websocket_endpoint(websocket: WebSocket):
+        await manager.connect(websocket)
+        try:
+            while True:
+                await websocket.receive_text()
+                await websocket.send_text(f"asd")
+        except WebSocketDisconnect:
+            manager.disconnect(websocket)

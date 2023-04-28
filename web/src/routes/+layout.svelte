@@ -42,7 +42,7 @@
     on:click={loadDevices}>Reload</button
   >
   <h1 class="text-2xl font-bold mt-5">Lights</h1>
-  <div class="inline-flex justify-around mt-3">
+  <div class="inline-flex flex-wrap justify-start mt-3">
     {#each Object.entries(lights) as [_, light]}
       <LightElement {light} />
     {/each}

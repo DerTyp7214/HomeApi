@@ -1,3 +1,5 @@
+from pymongo import MongoClient, database
+from pymongo.collection import Collection
 import json
 import os
 from typing import Any, Optional
@@ -5,136 +7,121 @@ from typing import Any, Optional
 from api.consts import BaseClass, HueConfig, WledConfig, WledItem
 
 
-class Config(BaseClass):
-    hue: HueConfig = HueConfig.from_dict({})
-    wled: WledConfig = WledConfig.from_dict({})
+def get_db() -> database.Database:
+    return MongoClient("mongodb://localhost:27017/").get_database("web")
 
-    __fields_set__ = set()
+
+class ConfigDatabase:
+    db: database.Database
+    config: Collection
 
     def __init__(self):
-        self.load()
+        self.db = get_db()
+        self.config = self.db.get_collection("config")
 
-    def load(self):
-        if not os.path.exists("config.json"):
-            self.save()
-            return
-        try:
-            with open("config.json") as f:
-                data = json.load(f)
-                self.load_from_dict(data)
-        except:
-            self.save()
+    def get(self, key: str) -> Any:
+        return self.config.find_one({"key": key})
 
-    def save(self):
-        with open("config.json", "w") as f:
-            json.dump(self.to_dict(), f)
+    def set(self, key: str, value: Any):
+        self.config.update_one(
+            {"key": key}, {"$set": {"value": value}}, upsert=True)
 
-    def __setattr__(self, name, value):
-        if isinstance(value, BaseClass):
-            self.__dict__[name].update(value.to_dict())
-        else:
-            self.__dict__[name] = value
-        self.save()
-
-    def __delattr__(self, name):
-        res = super().__delattr__(name)
-        self.save()
-        return res
+    def delete(self, key: str):
+        self.config.delete_one({"key": key})
 
     def set_hue(self, host: Optional[str] = None, user: Optional[str] = None):
-        if self.__dict__.get("hue") is None:
-            self.__dict__["hue"] = {}
+        if self.config.find_one({"key": "hue"}) is None:
+            self.config.insert_one({"key": "hue", "value": {}})
 
         if host is not None:
-            self.__dict__["hue"]["host"] = host
+            self.config.update_one(
+                {"key": "hue"}, {"$set": {"value.host": host}})
         if user is not None:
-            self.__dict__["hue"]["user"] = user
-
-        self.save()
+            self.config.update_one(
+                {"key": "hue"}, {"$set": {"value.user": user}})
 
     def get_hue(self) -> HueConfig:
-        if self.__dict__.get("hue") is None:
-            self.__dict__["hue"] = {}
-        return HueConfig.from_dict(self.__dict__["hue"])
+        if self.config.find_one({"key": "hue"}) is None:
+            self.config.insert_one({"key": "hue", "value": {}})
+        entry = self.config.find_one({"key": "hue"})
+        return HueConfig.from_dict((entry or {})["value"] or {})
 
     def get_hue_host(self) -> str:
-        if self.__dict__.get("hue") is None:
-            self.__dict__["hue"] = {}
-
-        return self.__dict__["hue"].get("host", "")
+        return self.get_hue().host or ""
 
     def get_hue_user(self) -> str:
-        if self.__dict__.get("hue") is None:
-            self.__dict__["hue"] = {}
-
-        return self.__dict__["hue"].get("user", "")
+        return self.get_hue().user or ""
 
     def set_hue_host(self, host: str):
-        if self.__dict__.get("hue") is None:
-            self.__dict__["hue"] = {}
-
-        self.__dict__["hue"]["host"] = host
-        self.save()
+        self.set_hue(host=host)
 
     def set_hue_user(self, user: str):
-        if self.__dict__.get("hue") is None:
-            self.__dict__["hue"] = {}
-
-        self.__dict__["hue"]["user"] = user
-        self.save()
+        self.set_hue(user=user)
 
     def add_wled(self, ip: str, name: str):
-        if self.__dict__.get("wled") is None:
-            self.__dict__["wled"] = {
-                "ips": []
-            }
-        if self.__dict__["wled"].get("ips") is None:
-            self.__dict__["wled"]["ips"] = []
+        if self.config.find_one({"key": "wled"}) is None:
+            self.config.insert_one({"key": "wled", "value": {}})
+        entry = self.config.find_one({"key": "wled"})
+        if entry is None:
+            entry = {"value": {}}
+        if entry.get("value") is None:
+            entry["value"] = {}
+        if entry["value"].get("ips") is None:
+            entry["value"]["ips"] = []
 
-        if self.__dict__["wled"]["ips"].count({"ip": ip, "name": name}) == 0:
-            self.__dict__["wled"]["ips"].append({"ip": ip, "name": name})
+        if entry["value"]["ips"].count({"ip": ip, "name": name}) == 0:
+            entry["value"]["ips"].append({"ip": ip, "name": name})
 
-        self.save()
+        self.config.update_one({"key": "wled"}, {"$set": entry["value"]})
 
     def remove_wled(self, ip: str) -> bool:
-        if self.__dict__.get("wled") is None:
-            self.__dict__["wled"] = {
-                "ips": []
-            }
-        if self.__dict__["wled"].get("ips") is None:
-            self.__dict__["wled"]["ips"] = []
+        if self.config.find_one({"key": "wled"}) is None:
+            self.config.insert_one({"key": "wled", "value": {}})
+        entry = self.config.find_one({"key": "wled"})
+        if entry is None:
+            entry = {"value": {}}
+        if entry.get("value") is None:
+            entry["value"] = {}
+        if entry["value"].get("ips") is None:
+            entry["value"]["ips"] = []
 
-        for i in range(len(self.__dict__["wled"]["ips"])):
-            if self.__dict__["wled"]["ips"][i]["ip"] == ip:
-                self.__dict__["wled"]["ips"].pop(i)
-                self.save()
+        for i in range(len(entry["value"]["ips"])):
+            if entry["value"]["ips"][i]["ip"] == ip:
+                entry["value"]["ips"].pop(i)
+                self.config.update_one(
+                    {"key": "wled"}, {"$set": entry["value"]})
                 return True
 
-        self.save()
         return False
 
     def get_wled(self, ip: str) -> WledItem | None:
-        if self.__dict__.get("wled") is None:
-            self.__dict__["wled"] = {
-                "ips": []
-            }
-        if self.__dict__["wled"].get("ips") is None:
-            self.__dict__["wled"]["ips"] = []
+        if self.config.find_one({"key": "wled"}) is None:
+            self.config.insert_one({"key": "wled", "value": {}})
+        entry = self.config.find_one({"key": "wled"})
+        if entry is None:
+            entry = {"value": {}}
+        if entry.get("value") is None:
+            entry["value"] = {}
+        if entry["value"].get("ips") is None:
+            entry["value"]["ips"] = []
 
-        for i in self.__dict__["wled"]["ips"]:
+        for i in entry["value"]["ips"]:
             if i["ip"] == ip:
                 return WledItem.from_dict(i)
         return None
 
     def get_wleds(self) -> list[WledItem]:
-        if self.__dict__.get("wled") is None:
-            self.__dict__["wled"] = {
-                "ips": []
-            }
-        if self.__dict__["wled"].get("ips") is None:
-            self.__dict__["wled"]["ips"] = []
+        if self.config.find_one({"key": "wled"}) is None:
+            self.config.insert_one({"key": "wled", "value": {}})
+        entry = self.config.find_one({"key": "wled"})
+        if entry is None:
+            entry = {"value": {}}
+        if entry.get("value") is None:
+            entry["value"] = {}
+        if entry["value"].get("ips") is None:
+            entry["value"]["ips"] = []
 
-        return [WledItem.from_dict(i) for i in self.__dict__["wled"]["ips"]]
+        return [WledItem.from_dict(i) for i in entry["value"]["ips"]]
 
 
-config = Config()
+config_db = ConfigDatabase()
