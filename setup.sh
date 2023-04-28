@@ -204,32 +204,32 @@ else
 
             tar -xzf mongo.tgz
 
-            mkdir -p /var/mongodb
-            mv mongodb*/* /var/mongodb/
-            ln -nfs /var/mongodb/bin/mongod /usr/local/sbin
+            sudo mkdir -p /var/mongodb
+            sudo mv mongodb*/* /var/mongodb/
+            sudo ln -nfs /var/mongodb/bin/mongod /usr/local/sbin
 
-            mkdir -p /data/db
-            mkdir -p /usr/local/mongodb/logs
+            sudo mkdir -p /data/db
+            sudo mkdir -p /usr/local/mongodb/logs
 
             cd /etc/init.d/
 
             if which curl >/dev/null ; then
                 printYellow "Downloading via curl."
-                curl http://gist.github.com/raw/162954/f5d6434099b192f2da979a0356f4ec931189ad07/gistfile1.sh
+                sudo curl http://gist.github.com/raw/162954/f5d6434099b192f2da979a0356f4ec931189ad07/gistfile1.sh
             elif which wget >/dev/null ; then
                 printYellow "Downloading via wget."
-                wget http://gist.github.com/raw/162954/f5d6434099b192f2da979a0356f4ec931189ad07/gistfile1.sh
+                sudo wget http://gist.github.com/raw/162954/f5d6434099b192f2da979a0356f4ec931189ad07/gistfile1.sh
             else
                 printRed "Cannot download, neither wget nor curl is available."
                 exit 1
             fi
 
-            mv gistfile1.sh mongodb
-            chmod +x mongodb
+            sudo mv gistfile1.sh mongodb
+            sudo chmod +x mongodb
 
-            update-rc.d mongodb 51 S .
+            sudo update-rc.d mongodb 51 S .
 
-            /etc/init.d/mongodb start
+            sudo /etc/init.d/mongodb start
             printGreen "mongodb is installed."
         else
             printRed "mongo.tgz is not a valid archive, please download it from https://www.mongodb.com/try/download/community place it in the same directory as this script, name it mongo.tgz and run this script again."
