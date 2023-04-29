@@ -28,19 +28,29 @@ startCommand="$uvicornLocation api.main:app --host 0.0.0.0"
 
 printGreen "Creating service file"
 
-sudo touch /etc/systemd/system/homeApi.service
+echo "[Unit]" >> homeApi.service
+echo "Description=Home API" >> homeApi.service
+echo "After=network.target" >> homeApi.service
+echo "" >> homeApi.service
+echo "[Service]" >> homeApi.service
+echo "User=$USER" >> homeApi.service
+echo "WorkingDirectory=$workingDirectory" >> homeApi.service
+echo "ExecStart=$startCommand" >> homeApi.service
+echo "" >> homeApi.service
+echo "[Install]" >> homeApi.service
+echo "WantedBy=multi-user.target" >> homeApi.service
 
-sudo echo "[Unit]" >> /etc/systemd/system/homeApi.service
-sudo echo "Description=Home API" >> /etc/systemd/system/homeApi.service
-sudo echo "After=network.target" >> /etc/systemd/system/homeApi.service
-sudo echo "" >> /etc/systemd/system/homeApi.service
-sudo echo "[Service]" >> /etc/systemd/system/homeApi.service
-sudo echo "User=$USER" >> /etc/systemd/system/homeApi.service
-sudo echo "WorkingDirectory=$workingDirectory" >> /etc/systemd/system/homeApi.service
-sudo echo "ExecStart=$startCommand" >> /etc/systemd/system/homeApi.service
-sudo echo "" >> /etc/systemd/system/homeApi.service
-sudo echo "[Install]" >> /etc/systemd/system/homeApi.service
-sudo echo "WantedBy=multi-user.target" >> /etc/systemd/system/homeApi.service
+read -p "Do you want to install the service? (y/n) " -n 1 -r
+
+echo
+
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    printRed "Aborting"
+    exit 1
+fi
+
+sudo mv homeApi.service /etc/systemd/system/homeApi.service
 
 printGreen "Reloading daemon"
 
