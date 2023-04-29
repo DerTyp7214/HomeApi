@@ -407,3 +407,13 @@ printGreen "Setup is complete."
 printf "\n"
 printGreen "Run 'pnpm deploy:web' to deploy the web server."
 printGreen "Run 'pnpm start:api' to start the api server."
+
+printf "\n\e[1m\e[33mDo you want to deploy the web server and start the api server?\e[0m" -n
+read -p " (y/n): " -n 1 -r
+
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    printf "\n"
+    pnpm deploy:web
+    pnpm start:api
+fi

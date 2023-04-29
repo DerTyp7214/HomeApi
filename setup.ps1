@@ -268,3 +268,16 @@ Write-Host "api-key secret is generated" -f Green
 Write-Host "Setup is complete\n" -f Green
 Write-Host "Run 'pnpm deploy:web' to deploy the web server" -f Green
 Write-Host "Run 'pnpm start:api' to start the api server" -f Green
+
+Write-Host "Do you want to deploy the web server and start the api server?" -f Yellow -NoNewline
+Write-Host " (y/n): " -NoNewline -f White
+$answer = Read-Host
+
+if ($answer -like "y") {
+  Write-Host "Deploying web server" -f Yellow
+  pnpm deploy:web
+  Write-Host "Web server deployed" -f Green
+  Write-Host "Starting api server" -f Yellow
+  pnpm start:api
+  Write-Host "Api server started" -f Green
+}
