@@ -167,9 +167,33 @@ else
     printGreen "python3 is installed."
 fi
 
-if which pip3 >/dev/null ; then
-    printGreen "pip3 is already installed."
-elif which ~/.local/bin/pip3 >/dev/null ; then
+function checkPip3() {
+    if which pip3 >/dev/null ; then
+        printGreen "pip3 is already installed."
+        return 0
+    elif which ~/.local/bin/pip3 >/dev/null ; then
+        printGreen "pip3 is already installed."
+        printYellow "adding ~/.local/bin to PATH"
+
+        if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+            if cat ~/.bashrc | grep "# LOCAL_BIN_PATH" > /dev/null ; then
+                printGreen "LOCAL_BIN_PATH is already in .bashrc"
+                source ~/.bashrc
+            else
+                printYellow "adding LOCAL_BIN_PATH to .bashrc"
+                echo "" >> ~/.bashrc
+                echo "# LOCAL_BIN_PATH" >> ~/.bashrc
+                echo "export PATH=\$PATH:\$HOME/.local/bin" >> ~/.bashrc
+                source ~/.bashrc
+            fi
+        fi
+        return 0
+    else 
+        return 1
+    fi
+}
+
+if checkPip3 ; then
     printGreen "pip3 is already installed."
     printYellow "adding ~/.local/bin to PATH"
 
@@ -199,7 +223,11 @@ else
         exit 1
     fi
 
-    echo "pip3 is installed."
+    if checkPip3 ; then
+        printGreen "pip3 is installed."
+    else
+        printRed "pip3 is not installed."
+    fi
 fi
 
 function addMongoRepo() {
