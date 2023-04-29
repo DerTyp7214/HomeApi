@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -i
 
 terminalWidth=$(tput cols)
 
@@ -202,9 +202,26 @@ else
     echo "pip3 is installed."
 fi
 
-function addMongoRepoUbuntu() {
+function addMongoRepo() {
     MONGO_VERSION=6.0
-    UBUNTU_NAME=$(lsb_release -cs)
+
+    if [ -x "$(command -v lsb_release)" ]; then
+        if [ "$(lsb_release -is)" == "Ubuntu" ]; then
+            printGreen "Ubuntu detected."
+            DISTRO="ubuntu"
+            DISTRO_NAME=$(lsb_release -cs)
+        elif [ "$(lsb_release -is)" == "Debian" ]; then
+            printGreen "Debian detected."
+            DISTRO="debian"
+            DISTRO_NAME=$(lsb_release -cs)
+        else
+            printRed "Unsupported Linux distribution."
+            exit 1
+        fi
+    else
+        printRed "Unsupported Linux distribution."
+        exit 1
+    fi
 
     sudo apt-get update
     sudo apt-get install gnupg -y
@@ -226,17 +243,17 @@ function addMongoRepoUbuntu() {
     cd /etc/apt/sources.list.d/
     sudo touch mongodb-org-${MONGO_VERSION}.list
     
-    echo "deb [arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_NAME}/mongodb-org/${MONGO_VERSION} multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
+    echo "deb [arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg] https://repo.mongodb.org/apt/${DISTRO} ${DISTRO_NAME}/mongodb-org/${MONGO_VERSION} multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
     sudo apt-get update
 }
 
 if which mongod >/dev/null ; then
     printGreen "mongodb is already installed."
 else
-    if [[ "$(cat /etc/*-release | grep ^ID=)" == "ID=ubuntu" ]]; then
+    if [[ "$(cat /etc/*-release | grep ^ID=)" == "ID=ubuntu" || "$(cat /etc/*-release | grep ^ID=)" == "ID=debian" ]]; then
         printYellow "Installing mongodb."
 
-        addMongoRepoUbuntu
+        addMongoRepo
         sudo apt-get install -y mongodb-org
         sudo apt-get install -y mongodb-org-shell
         sudo systemctl start mongod
@@ -251,10 +268,10 @@ fi
 if which mongosh >/dev/null ; then
     printGreen "mongosh is already installed."
 else
-    if [[ "$(cat /etc/*-release | grep ^ID=)" == "ID=ubuntu" ]]; then
+    if [[ "$(cat /etc/*-release | grep ^ID=)" == "ID=ubuntu" || "$(cat /etc/*-release | grep ^ID=)" == "ID=debian" ]]; then
         printYellow "Installing mongosh."
         
-        addMongoRepoUbuntu
+        addMongoRepo
         sudo apt-get install -y mongodb-org-shell
 
         printGreen "mongosh is installed."
