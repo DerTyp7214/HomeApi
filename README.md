@@ -4,7 +4,7 @@
 
 ### Ubuntu or Debian
 
-run `setup.sh` to setup the project
+run `. ./setup.sh` to setup the project
 
 ### Windows
 
