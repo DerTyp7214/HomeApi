@@ -204,6 +204,7 @@ fi
 
 function addMongoRepo() {
     MONGO_VERSION=6.0
+    currentDirectory=$(pwd)
 
     if [ -x "$(command -v lsb_release)" ]; then
         if [ "$(lsb_release -is)" == "Ubuntu" ]; then
@@ -245,6 +246,8 @@ function addMongoRepo() {
     
     echo "deb [arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg] https://repo.mongodb.org/apt/${DISTRO} ${DISTRO_NAME}/mongodb-org/${MONGO_VERSION} multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
     sudo apt-get update
+
+    cd $currentDirectory
 }
 
 if which mongod >/dev/null ; then
@@ -286,7 +289,7 @@ then
     printYellow "mongodb is not running, starting it."
     sudo systemctl start mongod
     
-    count = 0
+    count=0
     while ! nc -zvv localhost 27017 2>&1 | grep -q "succeeded!"; do
         printYellow "mongodb is not running, waiting 5 seconds."
         sleep 5
