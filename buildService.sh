@@ -56,9 +56,15 @@ printGreen "Reloading daemon"
 
 sudo systemctl daemon-reload
 
-printGreen "Enabling service"
+read -p "Do you want to start the service? (y/n) " -n 1 -r
 
-sudo service homeApi enable
+echo
+
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    printRed "Aborting"
+    exit 1
+fi
 
 printGreen "Starting service"
 
