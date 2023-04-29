@@ -1,12 +1,49 @@
 from pymongo import MongoClient, database
 from pymongo.collection import Collection
 from typing import Any, Optional
+from api.auth_handler import hash_password
 
 from api.consts import HueConfig, WledItem
+from api.model import UserSchema
 
 
 def get_db() -> database.Database:
     return MongoClient("mongodb://localhost:27017/").get_database("web")
+
+
+class UserDatabase:
+    db: database.Database
+    users: Collection
+
+    def __init__(self):
+        self.db = get_db()
+        self.users = self.db.get_collection("users")
+
+    def add_user(self, user: UserSchema):
+        user_dict = user.dict()
+        user_dict["password"] = hash_password(user_dict["password"])
+        self.users.insert_one(user_dict)
+
+    def get_user(self, username: str) -> Optional[UserSchema]:
+        user = self.users.find_one({"username": username})
+        if user is None:
+            return None
+        return UserSchema(**user)
+
+    def get_user_by_email(self, email: str) -> Optional[UserSchema]:
+        user = self.users.find_one({"email": email})
+        if user is None:
+            return None
+        return UserSchema(**user)
+
+    def get_user_by_id(self, id: str) -> Optional[UserSchema]:
+        user = self.users.find_one({"_id": id})
+        if user is None:
+            return None
+        return UserSchema(**user)
+
+    def delete_user(self, username: str):
+        self.users.delete_one({"username": username})
 
 
 class ConfigDatabase:
@@ -197,3 +234,4 @@ class ConfigDatabase:
 
 
 config_db = ConfigDatabase()
+user_db = UserDatabase()

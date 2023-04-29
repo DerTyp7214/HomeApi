@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import requests
+from api.auth_bearer import JWTBearer
 
 from api.consts import HueConfig, HueLightResponse, HueLightState, HuePlugResponse, HuePlugState, Light, LightState, Plug, WebSocketMessage, broadcast
-from api.config import config_db as config
+from api.db import config_db as config
 
 router = APIRouter(
     tags=["hue"],
     responses={404: {"description": "Not found"}},
+    dependencies=[Depends(JWTBearer())]
 )
 
 

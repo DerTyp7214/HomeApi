@@ -188,7 +188,7 @@ else
     echo "pip3 is installed."
 fi
 
-function addMongoRepo() {
+function addMongoRepoUbuntu() {
     MONGO_VERSION=6.0
     UBUNTU_NAME=$(lsb_release -cs)
 
@@ -207,22 +207,35 @@ function addMongoRepo() {
 if which mongod >/dev/null ; then
     printGreen "mongodb is already installed."
 else
-    printYellow "Installing mongodb."
+    if [[ "$(cat /etc/*-release | grep ^ID=)" == "ID=ubuntu" ]]; then
+        printYellow "Installing mongodb."
 
-    sudo apt-get install -y mongodb-org
-    sudo systemctl start mongod
+        addMongoRepoUbuntu
+        sudo apt-get install -y mongodb-org
+        sudo apt-get install -y mongodb-org-shell
+        sudo systemctl start mongod
 
-    printGreen "mongodb is installed."
+        printGreen "mongodb is installed."
+    else
+        printRed "mongodb is not installed and this script does not support your OS. If your OS can install mongodb, install it and run this script again."
+        exit 1
+    fi
 fi
 
 if which mongosh >/dev/null ; then
     printGreen "mongosh is already installed."
 else
-    printYellow "Installing mongosh."
-    
-    sudo apt-get install -y mongodb-org-shell
+    if [[ "$(cat /etc/*-release | grep ^ID=)" == "ID=ubuntu" ]]; then
+        printYellow "Installing mongosh."
+        
+        addMongoRepoUbuntu
+        sudo apt-get install -y mongodb-org-shell
 
-    printGreen "mongosh is installed."
+        printGreen "mongosh is installed."
+    else
+        printRed "mongosh is not installed and this script does not support your OS. If your OS can install mongosh, install it and run this script again."
+        exit 1
+    fi
 fi
 
 if ! pgrep -x "mongod" > /dev/null
@@ -259,3 +272,18 @@ printYellow "Installing dependencies."
 pnpm install
 pnpm install:api
 pnpm install:web
+
+printGreen "Dependencies are installed."
+printYellow "Generating api-key secret"
+
+SECRET=$(python3 -c "import os; import binascii; print(binascii.hexlify(os.urandom(32)))")
+ALGORITHM="HS256"
+
+echo "secret=$SECRET" > api/.env
+echo "algorithm=$ALGORITHM" >> api/.env
+
+printGreen "api-key secret is generated."
+printGreen "Setup is complete."
+printf "\n"
+printGreen "Run 'pnpm deploy:web' to deploy the web server."
+printGreen "Run 'pnpm start:api' to start the api server."

@@ -7,7 +7,8 @@
     getPlugs,
     hueConfig,
     hueInit,
-    hueDelete
+    hueDelete,
+    logout,
   } from '../api'
   import LightElement from '../components/+lightElement.svelte'
   import PlugElement from '../components/+plugElement.svelte'
@@ -70,11 +71,14 @@
 </script>
 
 <div class="m-4">
-  <div class="flex space-x-2">
-    <CustomButton click={loadDevices}>Reload</CustomButton>
-    <CustomButton click={() => getModal('info-modal').open()}>
-      <PlusIcon slot="icon" class="me-1" /> Devices
-    </CustomButton>
+  <div class="flex justify-between">
+    <div class="flex space-x-2">
+      <CustomButton click={loadDevices}>Reload</CustomButton>
+      <CustomButton click={() => getModal('info-modal').open()}>
+        <PlusIcon slot="icon" class="me-1" /> Devices
+      </CustomButton>
+    </div>
+    <CustomButton click={logout}>Logout</CustomButton>
   </div>
   <h1 class="text-2xl font-bold mt-5">Lights</h1>
   <div class="inline-flex flex-wrap justify-start mt-3">

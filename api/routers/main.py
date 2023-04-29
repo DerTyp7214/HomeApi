@@ -1,14 +1,16 @@
 from dataclasses import dataclass
+from api.auth_bearer import JWTBearer
 from api.consts import Light, LightState, Plug, PlugState, WebSocketMessage, broadcast
 from .hue import getNormalizedLights as getHueLights, getNormalizedLight as getHueLight, setLightStateNormalized as setHueLightState, getNormalizedPlugs as getHuePlugs, getNormalizedPlug as getHuePlug
 import json
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 
 router = APIRouter(
     tags=["main"],
     responses={404: {"description": "Not found"}},
+    dependencies=[Depends(JWTBearer())]
 )
 
 
@@ -68,22 +70,6 @@ def setPlugState(id: str, state: PlugState):
         return JSONResponse(status_code=404, content={"error": "Plug not found"})
     except ValueError:
         return JSONResponse(status_code=404, content={"error": "Plug not found"})
-
-
-def getPackageJson():
-    with open("package.json", "r") as f:
-        return json.load(f)
-
-
-@dataclass
-class StatusResponse():
-    status: str
-    version: str
-
-
-@router.get("/status", response_model=StatusResponse)
-def get_status():
-    return JSONResponse(status_code=200, content={"status": "OK", "version": getPackageJson()["version"]})
 
 
 @router.get("/lights", response_model=list[Light])

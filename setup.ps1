@@ -245,3 +245,23 @@ Write-Host "Installing dependencies" -f Yellow
 pnpm install
 pnpm install:api
 pnpm install:web
+
+Write-Host "Dependencies are installed" -f Green
+Write-Host "Generating api-key secret" -f Yellow
+
+$SECRET = python3 -c "import os; import binascii; print(binascii.hexlify(os.urandom(32)))"
+$ALGORITHM = "HS256"
+
+$prefix = "b'"
+$suffix = "'"
+$startIndex = $SECRET.IndexOf($prefix) + $prefix.Length
+$endIndex = $SECRET.IndexOf($suffix, $startIndex)
+$substring = $SECRET.Substring($startIndex, $endIndex - $startIndex)
+
+"secret=$substring" | Out-File -FilePath "api\.env" -Encoding ascii
+"algorithm=$ALGORITHM" | Out-File -FilePath "api\.env" -Encoding ascii -Append
+
+Write-Host "api-key secret is generated" -f Green
+Write-Host "Setup is complete\n" -f Green
+Write-Host "Run 'pnpm deploy:web' to deploy the web server" -f Green
+Write-Host "Run 'pnpm start:api' to start the api server" -f Green

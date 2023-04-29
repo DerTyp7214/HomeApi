@@ -1,13 +1,15 @@
 from urllib.parse import unquote
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
 import requests
-from api.config import config_db as config
+from api.auth_bearer import JWTBearer
+from api.db import config_db as config
 from api.consts import Wled, WledItem, WledState
 from fastapi.responses import JSONResponse
 
 router = APIRouter(
     tags=["wled"],
     responses={404: {"description": "Not found"}},
+    dependencies=[Depends(JWTBearer())]
 )
 
 
