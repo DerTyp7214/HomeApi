@@ -160,15 +160,17 @@ if which python3 >/dev/null ; then
     printGreen "python3 is already installed."
 else
     printYellow "Installing python3."
-
-    if which curl >/dev/null ; then
-        printYellow "Downloading via curl."
-        curl -fsSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
-    elif which wget >/dev/null ; then
-        printYellow "Downloading via wget."
-        wget -qO- https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
+    
+    if [ -x "$(command -v apt-get)" ]; then
+        sudo apt-get install python3 -y
+    elif [ -x "$(command -v pacman)" ]; then
+        sudo pacman -S python3
+    elif [ -x "$(command -v pkg)" ]; then
+        sudo pkg install python3
+    elif [ -x "$(command -v brew)" ]; then
+        sudo brew install python3
     else
-        printRed "Cannot download, neither wget nor curl is available."
+        printRed "Unable to determine package manager for this system"
         exit 1
     fi
 
