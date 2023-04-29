@@ -59,6 +59,14 @@ function bottomBorder() {
     printf "┘\e[0m\n"
 }
 
+function ubuntuOrDebian() {
+    if [[ "$(cat /etc/*-release | grep ^ID=)" == "ID=ubuntu" || "$(cat /etc/*-release | grep ^ID=)" == "ID=debian" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 clear
 
 topBorder
@@ -283,7 +291,7 @@ function addMongoRepo() {
 if which mongod >/dev/null ; then
     printGreen "mongodb is already installed."
 else
-    if [[ "$(cat /etc/*-release | grep ^ID=)" == "ID=ubuntu" || "$(cat /etc/*-release | grep ^ID=)" == "ID=debian" ]]; then
+    if ubuntuOrDebian; then
         printYellow "Installing mongodb."
 
         addMongoRepo
@@ -301,7 +309,7 @@ fi
 if which mongosh >/dev/null ; then
     printGreen "mongosh is already installed."
 else
-    if [[ "$(cat /etc/*-release | grep ^ID=)" == "ID=ubuntu" || "$(cat /etc/*-release | grep ^ID=)" == "ID=debian" ]]; then
+    if ubuntuOrDebian; then
         printYellow "Installing mongosh."
         
         addMongoRepo
@@ -310,6 +318,21 @@ else
         printGreen "mongosh is installed."
     else
         printRed "mongosh is not installed and this script does not support your OS. If your OS can install mongosh, install it and run this script again."
+        exit 1
+    fi
+fi
+
+if which nc >/dev/null ; then
+    printGreen "nc is already installed."
+else
+    if ubuntuOrDebian; then
+        printYellow "Installing nc."
+        
+        sudo apt-get install -y netcat
+
+        printGreen "nc is installed."
+    else
+        printRed "nc is not installed and this script does not support your OS. If your OS can install nc, install it and run this script again."
         exit 1
     fi
 fi
