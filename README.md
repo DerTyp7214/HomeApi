@@ -2,7 +2,7 @@
 
 ## Easy Install
 
-### Unix
+### Ubuntu or Debian
 
 run `setup.sh` to setup the project
 
@@ -15,9 +15,10 @@ run `setup.ps1` to setup the project
 ### Requirements
 
 - [pnpm](https://pnpm.io/installation)
-- [node](https://nodejs.org/en/)
+- [node 16+](https://nodejs.org/en/)
 - [python3](https://www.python.org/downloads/)
 - [pip3](https://pip.pypa.io/en/stable/installation/)
+- [monogodb](https://docs.mongodb.com/manual/installation/)
 
 run `pnpm install` to install the dependencies
 
