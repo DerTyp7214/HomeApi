@@ -226,7 +226,9 @@ else
     if checkPip3 ; then
         printGreen "pip3 is installed."
     else
-        printRed "pip3 is not installed."
+        printRed "failed to install pip3."
+        printRed "Please install pip3 manually."
+        exit 1
     fi
 fi
 
