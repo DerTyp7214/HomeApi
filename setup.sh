@@ -299,7 +299,7 @@ else
         addMongoRepo
         sudo apt-get install -y mongodb-org
         sudo apt-get install -y mongodb-org-shell
-        sudo systemctl start mongod
+        sudo service mongod start
 
         printGreen "mongodb is installed."
     else
@@ -342,7 +342,7 @@ fi
 if ! nc -zvv localhost 27017 2>&1 | grep -q "succeeded!"
 then
     printYellow "mongodb is not running, starting it."
-    sudo systemctl start mongod
+    sudo service mongod start
     
     count=0
     while ! nc -zvv localhost 27017 2>&1 | grep -q "succeeded!"; do
