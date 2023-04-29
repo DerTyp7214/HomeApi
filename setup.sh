@@ -285,6 +285,18 @@ if ! pgrep -x "mongod" > /dev/null
 then
     printYellow "mongodb is not running, starting it."
     sudo systemctl start mongod
+
+    
+    count = 0
+    while ! nc -zvv localhost 27017 2>&1 | grep -q "succeeded!"; do
+        printYellow "mongodb is not running, waiting 5 seconds."
+        sleep 5
+        count=$((count+1))
+        if [ $count -eq 10 ]; then
+            printRed "mongodb is not running, exiting."
+            exit 1
+        fi
+    done
 else
     printGreen "mongodb is running."
 fi
