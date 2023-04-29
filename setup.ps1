@@ -198,6 +198,9 @@ if ($?) {
   Write-Host "Starting MongoDB" -f Yellow
   Start-Service MongoDB
 
+  Write-Host "Waiting for MongoDB to start" -f Yellow
+  Start-Sleep -s 10
+
   Write-Host "MongoDB started" -f Green
 }
 

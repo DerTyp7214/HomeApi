@@ -281,11 +281,10 @@ else
     fi
 fi
 
-if ! pgrep -x "mongod" > /dev/null
+if ! nc -zvv localhost 27017 2>&1 | grep -q "succeeded!"
 then
     printYellow "mongodb is not running, starting it."
     sudo systemctl start mongod
-
     
     count = 0
     while ! nc -zvv localhost 27017 2>&1 | grep -q "succeeded!"; do
