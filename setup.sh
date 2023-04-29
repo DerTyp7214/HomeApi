@@ -188,18 +188,41 @@ else
     echo "pip3 is installed."
 fi
 
+function addMongoRepo() {
+    MONGO_VERSION=6.0
+    UBUNTU_NAME=$(lsb_release -cs)
+
+    sudo apt-get update
+    sudo apt-get install gnupg -y
+    
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg
+    cd /etc/apt/sources.list.d/
+    sudo touch mongodb-org-${MONGO_VERSION}.list
+    
+    echo "deb [arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg] https://repo.mongodb.org/apt/ubuntu ${UBUNTU_NAME}/mongodb-org/${MONGO_VERSION} multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
+    sudo apt-get update
+}
+
+if which mongod >/dev/null ; then
+    printGreen "mongodb is already installed."
+else
+    printYellow "Installing mongodb."
+
+    sudo apt-get install -y mongodb-org
+    sudo systemctl start mongod
+
+    printGreen "mongodb is installed."
+fi
+
 if which mongosh >/dev/null ; then
     printGreen "mongosh is already installed."
 else
-    printRed "mongosh is not installed. Please install it manually."
-    exit 1
-fi
+    printYellow "Installing mongosh."
+    
+    sudo apt-get install -y mongodb-org-shell
 
-if which mongod >/dev/null ; then
-    printGreen "mongod is already installed."
-else
-    printRed "mongod is not installed. Please install it manually."
-    exit 1
+    printGreen "mongosh is installed."
 fi
 
 if ! pgrep -x "mongod" > /dev/null
