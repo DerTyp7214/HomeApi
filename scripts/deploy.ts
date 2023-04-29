@@ -4,7 +4,7 @@ import fs from 'fs-extra'
 import logUpdate from 'log-update'
 
 const run = async () => {
-  const { stdout, stderr } = await exec('pnpm build:web')
+  const { stdout, stderr } = exec('pnpm build:web')
 
   logUpdate(chalk.yellow('Building web...'))
   logUpdate.done()

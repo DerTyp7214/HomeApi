@@ -73,7 +73,7 @@ spaces
 spaces
 bottomBorder
 
-printf "\n\e[33mThis script will install node, npm, pnpm, python3, and pip3.\nDo you wish to continue?\e[0m" -n
+printf "\n\e[33mThis script will install node, npm, pnpm, mongodb, python3, and pip3.\nDo you wish to continue?\e[0m" -n
 read -p " (y/n): " yn
 
 case $yn in
@@ -88,10 +88,19 @@ else
     printYellow "Installing node."
 
     if [ -x "$(command -v apt-get)" ]; then
-    sudo apt-get update
+        if which curl >/dev/null ; then
+            printYellow "Downloading via curl."
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        elif which wget >/dev/null ; then
+            printYellow "Downloading via wget."
+            wget -qO- https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        else
+            printRed "Cannot download, neither wget nor curl is available."
+            exit 1
+        fi
+        sudo apt-get update
 
-    sudo apt-get install -y nodejs
-
+        sudo apt-get install -y nodejs
     elif [ -x "$(command -v pacman)" ]; then
         sudo pacman -S nodejs
 
@@ -106,10 +115,10 @@ else
         exit 1
     fi
 
-    if [ -x "$(command -v node)" ] && [ -x "$(command -v npm)" ]; then
-        printGreen "Node.js and npm were installed successfully"
+    if [ -x "$(command -v node)" ]; then
+        printGreen "Node.js was installed successfully"
     else
-        printRed "Node.js and/or npm were not installed successfully"
+        printRed "Node.js was not installed successfully"
     fi
 fi
 
@@ -130,7 +139,12 @@ else
         exit 1
     fi
 
-    source ~/.bashrc
+    export PNPM_HOME="~/.local/share/pnpm"
+    case ":$PATH:" in
+        *":$PNPM_HOME:"*) ;;
+        *) export PATH="$PNPM_HOME:$PATH" ;;
+    esac
+
     printGreen "pnpm is installed."
 fi
 
@@ -167,7 +181,7 @@ elif which ~/.local/bin/pip3 >/dev/null ; then
             printYellow "adding LOCAL_BIN_PATH to .bashrc"
             echo "" >> ~/.bashrc
             echo "# LOCAL_BIN_PATH" >> ~/.bashrc
-            echo "export PATH=$PATH:$HOME/.local/bin" >> ~/.bashrc
+            echo "export PATH=\$PATH:\$HOME/.local/bin" >> ~/.bashrc
             source ~/.bashrc
         fi
     fi
@@ -196,7 +210,19 @@ function addMongoRepoUbuntu() {
     sudo apt-get install gnupg -y
     
     sudo mkdir -p /etc/apt/keyrings
-    curl -fsSL https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg
+    
+
+    if which curl >/dev/null ; then
+        printYellow "Downloading via curl."
+        curl -fsSL https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg
+    elif which wget >/dev/null ; then
+        printYellow "Downloading via wget."
+        wget -qO- https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg
+    else
+        printRed "Cannot download, neither wget nor curl is available."
+        exit 1
+    fi
+    
     cd /etc/apt/sources.list.d/
     sudo touch mongodb-org-${MONGO_VERSION}.list
     
@@ -278,9 +304,17 @@ printYellow "Generating api-key secret"
 
 SECRET=$(python3 -c "import os; import binascii; print(binascii.hexlify(os.urandom(32)))")
 ALGORITHM="HS256"
+substring=$(echo "$SECRET" | sed "s/'//g" | awk '{print $1}' | cut -c 2-)
 
-echo "secret=$SECRET" > api/.env
-echo "algorithm=$ALGORITHM" >> api/.env
+if [[ -f api/.env ]]; then
+    printYellow "api/.env exists, editing it."
+    sed -i "s/secret=.*/secret=$substring/g" api/.env
+    sed -i "s/algorithm=.*/algorithm=$ALGORITHM/g" api/.env
+else
+    printYellow "api/.env does not exist, creating it."
+    echo "secret=$substring" > api/.env
+    echo "algorithm=$ALGORITHM" >> api/.env
+fi
 
 printGreen "api-key secret is generated."
 printGreen "Setup is complete."
