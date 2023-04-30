@@ -4,6 +4,8 @@
 
 ### Ubuntu or Debian
 
+#### TODO: docker and script to build and run the project
+
 run `. ./setup.sh` to setup the project
 
 ### Windows

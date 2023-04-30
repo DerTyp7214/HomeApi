@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import json
 import os
 import time
-from fastapi import Depends, FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,7 +13,7 @@ from api.auth_bearer import JWTBearer
 from api.model import UserLoginSchema, UserSchema
 
 from .routers import main, hue, wled
-from .consts import origins, manager
+from .consts import ErrorResponse, origins, manager
 from .auth_handler import check_password, decodeJWT, signJWT
 from .db import user_db
 
@@ -54,11 +54,6 @@ class AuthResponse():
     token_type: str
 
 
-@dataclass
-class ErrorResponse():
-    error: str
-
-
 @app.post("/api/auth/signup", responses={200: {"model": AuthResponse}, 409: {"model": ErrorResponse}})
 def signup(user: UserSchema):
     if user_db.get_user_by_email(user.email) is not None:
@@ -97,7 +92,7 @@ def refresh(token: str = Depends(JWTBearer())):
     decoded = decodeJWT(token)
     if decoded is None:
         return JSONResponse(status_code=401, content={"error": "Invalid token"})
-    email = decoded["user_id"]
+    email = decoded["email"]
     if email is None:
         return JSONResponse(status_code=401, content={"error": "Invalid token"})
     return signJWT(email)
@@ -113,7 +108,7 @@ def me(token: str = Depends(JWTBearer())):
     decoded = decodeJWT(token)
     if decoded is None:
         return JSONResponse(status_code=401, content={"error": "Invalid token"})
-    email = decoded["user_id"]
+    email = decoded["email"]
     if email is None:
         return JSONResponse(status_code=401, content={"error": "Invalid token"})
     return JSONResponse(status_code=200, content={"email": email})

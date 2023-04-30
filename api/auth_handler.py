@@ -8,6 +8,8 @@ from decouple import config
 JWT_SECRET = str(config("secret"))
 JWT_ALGORITHM = str(config("algorithm"))
 
+TOKEN_VERSION = "1.0.0"
+
 
 def token_response(token):
     return {
@@ -16,10 +18,11 @@ def token_response(token):
     }
 
 
-def signJWT(user_id: str) -> Dict[str, str]:
+def signJWT(email: str) -> Dict[str, str]:
     payload = {
-        "user_id": user_id,
+        "email": email,
         "expires": time.time() + (60 * 60 * 24 * 7),
+        "version": TOKEN_VERSION,
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -33,6 +36,16 @@ def decodeJWT(token: str) -> dict | None:
         return decoded_token if decoded_token["expires"] >= time.time() else None
     except:
         return None
+
+
+def check_for_latest_token_version(token: str) -> bool:
+    try:
+        decoded_token = decodeJWT(token)
+        if decoded_token is None:
+            return False
+        return decoded_token["version"] == TOKEN_VERSION
+    except:
+        return False
 
 
 def hash_password(password: str) -> str:

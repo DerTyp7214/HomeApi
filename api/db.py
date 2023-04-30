@@ -1,10 +1,10 @@
 from pymongo import MongoClient, database
 from pymongo.collection import Collection
-from typing import Any, Optional
-from api.auth_handler import hash_password
+from typing import Any, Dict, Optional
+from api.auth_handler import decodeJWT, hash_password
 
 from api.consts import HueConfig, WledItem
-from api.model import UserSchema
+from api.model import UserSchema, UserSettingsSchema
 
 
 def get_db() -> database.Database:
@@ -45,118 +45,112 @@ class UserDatabase:
     def delete_user(self, username: str):
         self.users.delete_one({"username": username})
 
+    def config_db_by_token(self, token: str):
+        email = (decodeJWT(token) or {}).get("email")
+        if email is None:
+            return None
+        user = self.get_user_by_email(email)
+        if user is None:
+            return None
+        return ConfigDatabase(self, user)
+
+    def config_db(self, user: UserSchema):
+        return ConfigDatabase(self, user)
+
+    def __get_user__(self, user: UserSchema) -> dict | None:
+        return self.users.find_one({"username": user.username})
+
+    def __update_user__(self, user: UserSchema, data: dict):
+        self.users.update_one({"username": user.username}, {"$set": data})
+
 
 class ConfigDatabase:
-    db: database.Database
-    config: Collection
+    db: UserDatabase
+    user: UserSchema
 
-    __default_hue_config = {
-        "bridges": {},
-        "current_bridge_index": 0
-    }
+    def __init__(self, db: UserDatabase, user: UserSchema):
+        self.db = db
+        self.user = user
 
-    def __init__(self):
-        self.db = get_db()
-        self.config = self.db.get_collection("config")
+    def __user__(self) -> dict:
+        return self.db.__get_user__(self.user) or {}
 
-    def get(self, key: str) -> Any:
-        return self.config.find_one({"key": key})
+    def __check_bridge__(self, bridge_id: str) -> bool:
+        bridges: list[dict] = self.__user__(
+        )["settings"].get("hue_bridges", [])
+        for bridge in bridges:
+            if bridge["id"] == bridge_id:
+                return True
+        return False
 
-    def set(self, key: str, value: Any):
-        self.config.update_one(
-            {"key": key}, {"$set": {"value": value}}, upsert=True)
-
-    def delete(self, key: str):
-        self.config.delete_one({"key": key})
-
-    def __check_bridge(self, bridge_id: str) -> bool:
-        if self.config.find_one({"key": "hue"}) is None:
-            self.config.insert_one(
-                {"key": "hue", "value": self.__default_hue_config})
-        entry = self.config.find_one({"key": "hue"})
-        if entry is None:
-            entry = {"value": self.__default_hue_config}
-
-        return entry["value"]["bridges"].get(bridge_id) is not None
-
-    def __new_bridge_id(self) -> str:
-        entry = self.config.find_one({"key": "hue"})
-        if entry is None:
-            entry = {"value": self.__default_hue_config}
-            self.config.insert_one({"key": "hue", "value": entry["value"]})
-        return str(entry["value"]["current_bridge_index"] + 1)
+    def __new_bridge_id__(self) -> str:
+        user = self.__user__()
+        current_index = user.get("settings", {}).get("hue_index", 0)
+        return str(current_index + 1)
 
     def add_hue_bridge(self, ip: Optional[str] = None, user: Optional[str] = None) -> tuple[bool, str]:
-        bridge_id = int(self.__new_bridge_id())
+        bridge_id = int(self.__new_bridge_id__())
 
-        while self.__check_bridge(str(bridge_id)):
+        while self.__check_bridge__(str(bridge_id)):
             bridge_id += 1
 
         bridge_id = str(bridge_id)
 
-        if not self.__check_bridge(bridge_id):
-            entry = self.config.find_one({"key": "hue"})
-            if entry is None or entry.get("value") is None:
-                return (False, "")
-            for bridge in entry["value"]["bridges"]:
-                if entry["value"]["bridges"][bridge].get("ip") == ip:
-                    return (False, "")
-            entry["value"]["bridges"][bridge_id] = {}
-            entry["value"]["current_bridge_index"] = int(bridge_id)
+        if not self.__check_bridge__(bridge_id):
+            current_user_data = self.__user__()
+            new_bridge = {"id": bridge_id}
             if ip is not None:
-                entry["value"]["bridges"][bridge_id]["ip"] = ip
+                new_bridge["ip"] = ip
             if user is not None:
-                entry["value"]["bridges"][bridge_id]["user"] = user
-            self.config.update_one({"key": "hue"}, {"$set": entry})
+                new_bridge["user"] = user
+            if current_user_data.get("settings") is None:
+                current_user_data["settings"] = {}
+            if current_user_data["settings"].get("hue_bridges") is None:
+                current_user_data["settings"]["hue_bridges"] = []
+            current_user_data["settings"]["hue_bridges"].append(new_bridge)
+            current_user_data["settings"]["hue_index"] = int(bridge_id)
+            self.db.__update_user__(self.user, current_user_data)
             return (True, bridge_id)
 
         return (False, "")
 
     def remove_hue_bridge(self, bridge_id: str) -> bool:
-        if self.__check_bridge(bridge_id):
-            entry = self.config.find_one({"key": "hue"})
-            if entry is None or entry.get("value") is None:
-                return False
-            entry["value"]["bridges"].pop(bridge_id)
-            self.config.update_one({"key": "hue"}, {"$set": entry})
+        if self.__check_bridge__(bridge_id):
+            current_user_data = self.__user__()
+            current_user_data["settings"]["hue_bridges"] = [
+                bridge for bridge in current_user_data["settings"]["hue_bridges"] if bridge["id"] != bridge_id]
+            self.db.__update_user__(self.user, current_user_data)
             return True
 
         return False
 
-    def get_hue_bridge(self, bridge_id: str) -> HueConfig:
-        if self.__check_bridge(bridge_id):
-            entry = self.config.find_one({"key": "hue"})
-            if entry is None or entry.get("value") is None:
-                return HueConfig.from_dict({})
-            return HueConfig.from_dict({"host": entry["value"]["bridges"][bridge_id].get("ip"), "user": entry["value"]["bridges"][bridge_id].get("user")})
-
-        return HueConfig.from_dict({})
-
     def get_hue_bridges(self) -> dict[str, HueConfig]:
-        entry = self.config.find_one({"key": "hue"})
-        if entry is None or entry.get("value") is None:
-            return {}
+        current_user_data = self.__user__()
         bridges = {}
-        for i in entry["value"]["bridges"]:
-            bridges[i] = HueConfig.from_dict(entry["value"]["bridges"][i])
+        for bridge in current_user_data["settings"]["hue_bridges"]:
+            bridges[bridge["id"]] = HueConfig.from_dict(bridge)
         return bridges
 
+    def get_hue_bridge(self, bridge_id: str) -> HueConfig:
+        bridges = self.get_hue_bridges()
+        return bridges.get(bridge_id, HueConfig.from_dict({"id": bridge_id}))
+
     def set_hue_bridge(self, bridge_id: str, ip: Optional[str] = None, user: Optional[str] = None) -> bool:
-        if self.__check_bridge(bridge_id):
-            entry = self.config.find_one({"key": "hue"})
-            if entry is None or entry.get("value") is None:
-                return False
-            if ip is not None:
-                entry["value"]["bridges"][bridge_id]["ip"] = ip
-            if user is not None:
-                entry["value"]["bridges"][bridge_id]["user"] = user
-            self.config.update_one({"key": "hue"}, {"$set": entry})
+        if self.__check_bridge__(bridge_id):
+            current_user_data = self.__user__()
+            for bridge in current_user_data["settings"]["hue_bridges"]:
+                if bridge["id"] == bridge_id:
+                    if ip is not None:
+                        bridge["ip"] = ip
+                    if user is not None:
+                        bridge["user"] = user
+            self.db.__update_user__(self.user, current_user_data)
             return True
 
         return False
 
     def get_hue_bridge_host(self, bridge_id: str) -> str:
-        return self.get_hue_bridge(bridge_id).host or ""
+        return self.get_hue_bridge(bridge_id).ip or ""
 
     def get_hue_bridge_user(self, bridge_id: str) -> str:
         return self.get_hue_bridge(bridge_id).user or ""
@@ -167,71 +161,42 @@ class ConfigDatabase:
     def set_hue_bridge_user(self, bridge_id: str, user: str):
         self.set_hue_bridge(bridge_id, user=user)
 
-    def add_wled(self, ip: str, name: str):
-        if self.config.find_one({"key": "wled"}) is None:
-            self.config.insert_one({"key": "wled", "value": {}})
-        entry = self.config.find_one({"key": "wled"})
-        if entry is None:
-            entry = {"value": {}}
-        if entry.get("value") is None:
-            entry["value"] = {}
-        if entry["value"].get("ips") is None:
-            entry["value"]["ips"] = []
+    def add_wled(self, ip: str, name: str) -> bool:
+        current_user_data = self.__user__()
+        if current_user_data.get("settings") is None:
+            current_user_data["settings"] = {}
+        if current_user_data["settings"].get("wleds") is None:
+            current_user_data["settings"]["wleds"] = []
 
-        if entry["value"]["ips"].count({"ip": ip, "name": name}) == 0:
-            entry["value"]["ips"].append({"ip": ip, "name": name})
+        if current_user_data["settings"]["wleds"].count({"ip": ip, "name": name}) == 0:
+            current_user_data["settings"]["wleds"].append(
+                {"ip": ip, "name": name})
 
-        self.config.update_one({"key": "wled"}, {"$set": entry})
-
-    def remove_wled(self, ip: str) -> bool:
-        if self.config.find_one({"key": "wled"}) is None:
-            self.config.insert_one({"key": "wled", "value": {}})
-        entry = self.config.find_one({"key": "wled"})
-        if entry is None:
-            entry = {"value": {}}
-        if entry.get("value") is None:
-            entry["value"] = {}
-        if entry["value"].get("ips") is None:
-            entry["value"]["ips"] = []
-
-        for i in range(len(entry["value"]["ips"])):
-            if entry["value"]["ips"][i]["ip"] == ip:
-                entry["value"]["ips"].pop(i)
-                self.config.update_one(
-                    {"key": "wled"}, {"$set": entry})
-                return True
+            self.db.__update_user__(self.user, current_user_data)
+            return True
 
         return False
 
-    def get_wled(self, ip: str) -> WledItem | None:
-        if self.config.find_one({"key": "wled"}) is None:
-            self.config.insert_one({"key": "wled", "value": {}})
-        entry = self.config.find_one({"key": "wled"})
-        if entry is None:
-            entry = {"value": {}}
-        if entry.get("value") is None:
-            entry["value"] = {}
-        if entry["value"].get("ips") is None:
-            entry["value"]["ips"] = []
+    def remove_wled(self, ip: str) -> bool:
+        current_user_data = self.__user__()
+        if current_user_data.get("settings") is None or current_user_data["settings"].get("wleds") is None:
+            return False
 
-        for i in entry["value"]["ips"]:
-            if i["ip"] == ip:
-                return WledItem.from_dict(i)
-        return None
+        current_user_data["settings"]["wleds"] = [
+            wled for wled in current_user_data["settings"]["wleds"] if wled["ip"] != ip]
+
+        self.db.__update_user__(self.user, current_user_data)
+        return True
 
     def get_wleds(self) -> list[WledItem]:
-        if self.config.find_one({"key": "wled"}) is None:
-            self.config.insert_one({"key": "wled", "value": {}})
-        entry = self.config.find_one({"key": "wled"})
-        if entry is None:
-            entry = {"value": {}}
-        if entry.get("value") is None:
-            entry["value"] = {}
-        if entry["value"].get("ips") is None:
-            entry["value"]["ips"] = []
+        current_user_data = self.__user__()
+        if current_user_data.get("settings") is None or current_user_data["settings"].get("wleds") is None:
+            return []
 
-        return [WledItem.from_dict(i) for i in entry["value"]["ips"]]
+        return [WledItem.from_dict(wled) for wled in current_user_data["settings"]["wleds"]]
+
+    def get_wled(self, ip: str) -> WledItem | None:
+        return next((wled for wled in self.get_wleds() if wled.ip == ip), None)
 
 
-config_db = ConfigDatabase()
 user_db = UserDatabase()

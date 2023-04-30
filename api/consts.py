@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from json import dumps, loads
 from typing import Optional
 from fastapi import WebSocket
@@ -40,7 +41,8 @@ class BaseClass(BaseModel):
 
 
 class HueConfig(BaseClass):
-    host: Optional[str]
+    id: Optional[str]
+    ip: Optional[str]
     user: Optional[str]
 
 
@@ -250,6 +252,11 @@ class Plug(BaseClass):
 class WebSocketMessage(BaseClass):
     type: str
     data: dict
+
+
+@dataclass
+class ErrorResponse():
+    error: str
 
 
 class ConnectionManager:

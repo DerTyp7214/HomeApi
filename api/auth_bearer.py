@@ -31,7 +31,7 @@ class JWTBearer(HTTPBearer):
         except:
             payload = None
         if payload:
-            user_id = payload.get("user_id")
-            if user_id is not None and user_db.get_user_by_email(user_id) is not None:
+            email = payload.get("email")
+            if email is not None and user_db.get_user_by_email(email) is not None:
                 isTokenValid = True
         return isTokenValid

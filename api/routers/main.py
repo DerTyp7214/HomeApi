@@ -1,8 +1,6 @@
-from dataclasses import dataclass
 from api.auth_bearer import JWTBearer
 from api.consts import Light, LightState, Plug, PlugState, WebSocketMessage, broadcast
 from .hue import getNormalizedLights as getHueLights, getNormalizedLight as getHueLight, setLightStateNormalized as setHueLightState, getNormalizedPlugs as getHuePlugs, getNormalizedPlug as getHuePlug
-import json
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
@@ -14,43 +12,43 @@ router = APIRouter(
 )
 
 
-def allLights() -> list[Light]:
-    return [*getHueLights()]
+def allLights(token: str) -> list[Light]:
+    return [*getHueLights(token)]
 
 
-def allPlugs() -> list[Plug]:
-    return [*getHuePlugs()]
+def allPlugs(token: str) -> list[Plug]:
+    return [*getHuePlugs(token)]
 
 
-def getLight(id: str):
+def getLight(token: str, id: str):
     try:
         if id.startswith("hue-"):
             bridge_id, light_id = id.replace("hue-", "").split("-")
-            return getHueLight(bridge_id, int(light_id))
-        return allLights()[int(id)]
+            return getHueLight(token, bridge_id, int(light_id))
+        return allLights(token)[int(id)]
     except ValueError:
         return None
     except IndexError:
         return None
 
 
-def getPlug(id: str):
+def getPlug(token: str, id: str):
     try:
         if id.startswith("hue-"):
             bridge_id, plug_id = id.replace("hue-", "").split("-")
-            return getHuePlug(bridge_id, int(plug_id))
-        return allPlugs()[int(id)]
+            return getHuePlug(token, bridge_id, int(plug_id))
+        return allPlugs(token)[int(id)]
     except ValueError:
         return None
     except IndexError:
         return None
 
 
-def setLightState(id: str, state: LightState):
+def setLightState(token: str, id: str, state: LightState):
     try:
         if id.startswith("hue-"):
             bridge_id, light_id = id.replace("hue-", "").split("-")
-            response = setHueLightState(bridge_id, int(light_id), state)
+            response = setHueLightState(token, bridge_id, int(light_id), state)
             if response is None:
                 return JSONResponse(status_code=404, content={"error": "Light not found"})
             return response
@@ -59,11 +57,11 @@ def setLightState(id: str, state: LightState):
         return JSONResponse(status_code=404, content={"error": "Light not found"})
 
 
-def setPlugState(id: str, state: PlugState):
+def setPlugState(token: str, id: str, state: PlugState):
     try:
         if id.startswith("hue-"):
             bridge_id, plug_id = id.replace("hue-", "").split("-")
-            response = setHueLightState(bridge_id, int(plug_id), state)
+            response = setHueLightState(token, bridge_id, int(plug_id), state)
             if response is None:
                 return JSONResponse(status_code=404, content={"error": "Plug not found"})
             return response
@@ -73,17 +71,17 @@ def setPlugState(id: str, state: PlugState):
 
 
 @router.get("/lights", response_model=list[Light])
-def get_lights():
+def get_lights(token: str = Depends(JWTBearer())):
     lights = []
-    for light in allLights():
+    for light in allLights(token):
         lights.append(light.to_dict())
 
     return JSONResponse(status_code=200, content=lights)
 
 
 @router.get("/lights/{id}", response_model=Light)
-def get_light(id: str):
-    light = getLight(id)
+def get_light(id: str, token: str = Depends(JWTBearer())):
+    light = getLight(token, id)
 
     if light is None:
         return JSONResponse(status_code=404, content={"error": "Light not found"})
@@ -91,10 +89,10 @@ def get_light(id: str):
 
 
 @router.put("/lights/{id}/state", response_model=dict)
-async def set_light_state(id: str, state: LightState):
-    response = setLightState(id, state)
+async def set_light_state(id: str, state: LightState, token: str = Depends(JWTBearer())):
+    response = setLightState(token, id, state)
 
-    light = getLight(id)
+    light = getLight(token, id)
 
     if light is None:
         return JSONResponse(status_code=404, content={"error": "Light not found"})
@@ -114,17 +112,17 @@ async def set_light_state(id: str, state: LightState):
 
 
 @router.get("/plugs", response_model=list[Plug])
-def get_plugs():
+def get_plugs(token: str = Depends(JWTBearer())):
     plugs = []
-    for plug in allPlugs():
+    for plug in allPlugs(token):
         plugs.append(plug.to_dict())
 
     return JSONResponse(status_code=200, content=plugs)
 
 
 @router.get("/plugs/{id}", response_model=Plug)
-def get_plug(id: str):
-    plug = getPlug(id)
+def get_plug(id: str, token: str = Depends(JWTBearer())):
+    plug = getPlug(token, id)
 
     if plug is None:
         return JSONResponse(status_code=404, content={"error": "Plug not found"})
@@ -132,10 +130,10 @@ def get_plug(id: str):
 
 
 @router.put("/plugs/{id}/state", response_model=dict)
-async def set_plug_state(id: str, state: PlugState):
-    response = setPlugState(id, state)
+async def set_plug_state(id: str, state: PlugState, token: str = Depends(JWTBearer())):
+    response = setPlugState(token, id, state)
 
-    plug = getPlug(id)
+    plug = getPlug(token, id)
 
     if plug is None:
         return JSONResponse(status_code=404, content={"error": "Plug not found"})
