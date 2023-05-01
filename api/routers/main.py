@@ -1,5 +1,6 @@
 from api.auth_bearer import JWTBearer
-from api.consts import Light, LightState, Plug, PlugState, WebSocketMessage, broadcast
+from api.consts import Light, LightState, Plug, PlugState, WebSocketMessage
+from api.websocket import broadcast
 from .hue import LightHandler as HueLightHandler
 from .wled import LightHandler as WledLightHandler
 from fastapi import APIRouter, Depends
@@ -110,7 +111,7 @@ async def set_light_state(id: str, state: LightState, token: str = Depends(JWTBe
         await broadcast(WebSocketMessage.from_dict({
             "type": "light",
             "data": light.__dict__,
-        }))
+        }), token)
     except:
         pass
 
@@ -152,7 +153,7 @@ async def set_plug_state(id: str, state: PlugState, token: str = Depends(JWTBear
         await broadcast(WebSocketMessage(
             type="plug",
             data=plug.__dict__,
-        ))
+        ), token)
     except:
         pass
 

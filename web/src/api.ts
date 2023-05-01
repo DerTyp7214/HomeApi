@@ -23,6 +23,9 @@ export const checkApiUrl = async (count: number = 0) => {
   try {
     const res = await fetch(`${_apiUrl}/status`).then((res) => res.json())
     if (res.status === 'OK') {
+      if (count > 0) {
+        location.reload()
+      }
       return true
     }
   } catch (e) {
@@ -214,7 +217,9 @@ export const hueInit = async (bridgeId: string) => {
 }
 
 export const connectWebSocket = () => {
-  const ws = new WebSocket(`ws://${window.location.host}/ws`)
+  const ws = new WebSocket(
+    _apiUrl.replace('http://', 'ws://').replace('/api', '/ws') + `?token=${_apiKey}`
+  )
   ws.addEventListener('open', () => {
     console.log('WebSocket connected')
   })

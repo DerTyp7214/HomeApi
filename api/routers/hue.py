@@ -4,8 +4,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import requests
 from api.auth_bearer import JWTBearer
+import colorsys
 
-from api.consts import ErrorResponse, HueConfig, HueLightResponse, HueLightState, HuePlugResponse, HuePlugState, Light, LightState, Plug, WebSocketMessage, broadcast
+from api.consts import ErrorResponse, HueLightResponse, HueLightState, HuePlugResponse, HuePlugState, Light, LightState, Plug, WebSocketMessage
+from api.websocket import broadcast
 from api.db import user_db
 
 router = APIRouter(
@@ -21,19 +23,36 @@ class LightHandler:
     def __init__(self, token: str):
         self.token = token
 
-    def mapLight(self, bridge_id: str, light, id: int) -> Light | None:
+    def __hsb_to_hsv__(self, hue: float, saturation: float, brightness: float) -> tuple[float, float, float]:
+        return (hue/65535*360, saturation/255*100, brightness/255*100)
+
+    def __hsv_to_rgb__(self, hue: float, saturation: float, brightness: float) -> tuple[int, int, int]:
+        return tuple(round(i * 255) for i in colorsys.hsv_to_rgb(hue / 360, saturation / 100, brightness / 100))
+
+    def __rgb_to_hsv__(self, red: int, green: int, blue: int) -> tuple[float, float, float]:
+        hsv = colorsys.rgb_to_hsv(red / 255, green / 255, blue / 255)
+        return (hsv[0] * 360, hsv[1] * 100, hsv[2] * 100)
+
+    def __hsv_to_hsb__(self, hue: float, saturation: float, brightness: float) -> tuple[float, float, float]:
+        return (hue/360*65535, saturation/100*255, brightness/100*255)
+
+    def __mapLight__(self, bridge_id: str, light, id: int) -> Light | None:
         if "colormode" not in light["state"]:
             return None
+
+        hsv = self.__hsb_to_hsv__(
+            light["state"]["hue"],
+            light["state"]["sat"],
+            light["state"]["bri"]
+        )
+        rgb = self.__hsv_to_rgb__(hsv[0], hsv[1], hsv[2])
 
         light = {
             "id": f"hue-{bridge_id}-{id}",
             "name": light["name"],
             "on": light["state"]["on"],
             "brightness": float(light["state"]["bri"]) / 255,
-            "color": {
-                "hue": float(light["state"]["hue"]) / 65535 * 360,
-                "saturation": float(light["state"]["sat"]) / 255 * 100,
-            },
+            "color": [rgb],
             "reachable": light["state"]["reachable"],
             "type": light["type"],
             "model": light["modelid"],
@@ -45,7 +64,7 @@ class LightHandler:
 
         return Light.from_dict(light)
 
-    def mapPlug(self, bridge_id: str, plug, id: int) -> Plug | None:
+    def __mapPlug__(self, bridge_id: str, plug, id: int) -> Plug | None:
         if plug["config"]["archetype"] != "plug":
             return None
 
@@ -95,7 +114,7 @@ class LightHandler:
         for bridge in bridges:
             lights = self.getLightsBride(bridge)
             for light in lights:
-                normalized = self.mapLight(bridge, lights[light], light)
+                normalized = self.__mapLight__(bridge, lights[light], light)
                 if normalized is not None:
                     normalizedLights.append(normalized)
         return normalizedLights
@@ -117,7 +136,7 @@ class LightHandler:
         if config is None:
             return None
         light = self.__getLight__(bridge_id, id)
-        normalizedLight = self.mapLight(bridge_id, light, id)
+        normalizedLight = self.__mapLight__(bridge_id, light, id)
         return normalizedLight
 
     def getPlugsBride(self, bridge_id: str):
@@ -145,7 +164,7 @@ class LightHandler:
         for bridge in bridges:
             plugs = self.getPlugsBride(bridge)
             for plug in plugs:
-                normalized = self.mapPlug(bridge, plugs[plug], plug)
+                normalized = self.__mapPlug__(bridge, plugs[plug], plug)
                 if normalized is not None:
                     normalizedPlugs.append(normalized)
         return normalizedPlugs
@@ -160,7 +179,7 @@ class LightHandler:
         plug = self.__getPlug__(bridge_id, id)
         if plug is None:
             return None
-        return self.mapPlug(bridge_id, plug, id)
+        return self.__mapPlug__(bridge_id, plug, id)
 
     def __setLightState__(self, bridge_id: str, id: int, state: HueLightState):
         config = user_db.config_db_by_token(self.token)
@@ -177,16 +196,21 @@ class LightHandler:
     def setLightState(self, bridge_id: str, id: int, state: LightState):
         new_state = HueLightState.from_dict({})
 
-        if state.color is not None:
-            if state.color.hue is not None:
-                new_state.hue = state.color.hue / 360 * 65535
-            if state.color.saturation is not None:
-                new_state.sat = state.color.saturation / 100 * 255
+        if state.brightness is not None:
+            new_state.bri = round(state.brightness / 100 * 255)
+
+        if state.color is not None and len(state.color) > 0:
+            hsv = self.__rgb_to_hsv__(
+                state.color[0][0],
+                state.color[0][1],
+                state.color[0][2]
+            )
+            hsb = self.__hsv_to_hsb__(hsv[0], hsv[1], hsv[2])
+            new_state.hue = round(hsb[0])
+            new_state.sat = round(hsb[1])
 
         if state.on is not None:
             new_state.on = state.on
-        if state.brightness is not None:
-            new_state.bri = state.brightness * 255
 
         return self.__setLightState__(bridge_id, id, new_state)
 
@@ -279,7 +303,7 @@ async def set_light_state(bridge_id: str, id: int, state: HueLightState, token: 
             await broadcast(WebSocketMessage(
                 type="light",
                 data=light,
-            ))
+            ), token)
     except:
         pass
 
@@ -322,7 +346,7 @@ async def set_plug_state(bridge_id: str, id: int, state: HuePlugState, token: st
             await broadcast(WebSocketMessage(
                 type="plug",
                 data=plug,
-            ))
+            ), token)
     except:
         pass
 

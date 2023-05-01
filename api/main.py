@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import json
 import os
 import time
-from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,9 +13,10 @@ from api.auth_bearer import JWTBearer
 from api.model import UserLoginSchema, UserSchema
 
 from .routers import main, hue, wled
-from .consts import ErrorResponse, origins, manager
+from .consts import ErrorResponse, origins
 from .auth_handler import check_password, decodeJWT, signJWT
 from .db import user_db
+from .websocket import manager
 
 
 app = FastAPI(
@@ -124,12 +125,16 @@ if os.path.exists(dist):
     def root():
         return RedirectResponse(url="/static")
 
-    @app.websocket("/ws")
-    async def websocket_endpoint(websocket: WebSocket):
-        await manager.connect(websocket)
-        try:
-            while True:
-                await websocket.receive_text()
-                await websocket.send_text(f"asd")
-        except WebSocketDisconnect:
-            manager.disconnect(websocket)
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
+    if not JWTBearer().verify_jwt(token):
+        await websocket.close()
+        return
+    await manager.connect(websocket, token)
+    try:
+        while True:
+            await websocket.receive_text()
+            await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, token)

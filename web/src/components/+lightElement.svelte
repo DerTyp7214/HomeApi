@@ -2,14 +2,12 @@
   import InfoIcon from 'svelte-material-icons/Information.svelte'
 
   import { setLight } from '../api'
-  import { HSBToRGB, RGBToHEX } from '../utils'
+  import { changeLightnessOfRgb, RGBToHEX } from '../utils'
   import Modal, { getModal } from './+modal.svelte'
 
   export let light: Light
 
-  $: color = RGBToHEX(
-    HSBToRGB(light.color.hue, light.color.saturation, light.on ? 0.5 : 0)
-  )
+  $: color = light.on ? changeLightnessOfRgb(light.color[0], 0.35) : '#000000'
 
   async function toggleLight() {
     light = await setLight(light.id, { on: !light.on })

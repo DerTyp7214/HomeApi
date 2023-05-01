@@ -35,6 +35,11 @@
   ws.addEventListener('message', (event) => {
     const { type, data } = JSON.parse(event.data)
 
+    if (!data) {
+      loadDevices()
+      return
+    }
+
     switch (type) {
       case 'light':
         lights[data.id] = data

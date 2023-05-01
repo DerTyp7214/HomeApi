@@ -20,9 +20,11 @@
 
   checkApiKey()
     .then(() => {
+      unauthorized = false
       authorized = true
     })
     .catch(() => {
+      authorized = false
       unauthorized = true
     })
 

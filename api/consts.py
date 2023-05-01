@@ -1,9 +1,7 @@
 from dataclasses import dataclass
 from json import dumps, loads
 from typing import Optional
-from fastapi import WebSocket
 from pydantic import BaseModel
-
 
 class BaseClass(BaseModel):
     def to_dict(self, recursive: bool = True) -> dict:
@@ -55,15 +53,19 @@ class WledConfig(BaseClass):
     ips: Optional[list[WledItem]]
 
 
-class LightColor(BaseClass):
-    hue: Optional[float]
-    saturation: Optional[float]
-
-
+# @brief A class representing a light.
+#
+# @on Whether the light is on or off.
+# @brightness The brightness of the light.
+# @color A list of tuples containing the color of the light.
+# value ranges:
+#   red: 0-255
+#   green: 0-255
+#   blue: 0-255
 class LightState(BaseClass):
     on: Optional[bool]
     brightness: Optional[float]
-    color: Optional[LightColor]
+    color: Optional[list[tuple[int, int, int]]]
 
 
 class WledNl(BaseClass):
@@ -82,7 +84,7 @@ class WledSeg(BaseClass):
     start: int
     stop: int
     len: int
-    col: list[list[int]]
+    col: list[tuple[int, int, int]]
     fx: int
     sx: int
     ix: int
@@ -226,7 +228,7 @@ class Light(BaseClass):
     name: str
     on: bool
     brightness: float
-    color: LightColor
+    color: list[tuple[int, int, int]]
     reachable: bool
     type: str
     model: str
@@ -257,32 +259,6 @@ class WebSocketMessage(BaseClass):
 @dataclass
 class ErrorResponse():
     error: str
-
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: list[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-
-manager = ConnectionManager()
-
-
-async def broadcast(message: WebSocketMessage):
-    await manager.broadcast(dumps(message.__dict__))
 
 
 origins = [

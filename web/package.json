@@ -12,6 +12,7 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.0.3",
     "@tsconfig/svelte": "^4.0.1",
+    "@types/color": "^3.0.3",
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.23",
     "svelte": "^3.57.0",
@@ -22,6 +23,7 @@
     "vite": "^4.3.2"
   },
   "dependencies": {
+    "color": "^4.2.3",
     "svelte-material-icons": "^3.0.4"
   }
 }
