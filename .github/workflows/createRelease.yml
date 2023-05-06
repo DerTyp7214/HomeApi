@@ -46,12 +46,13 @@ jobs:
       - name: Deploy Web
         run: |
           pnpm deploy:web
+          tar -czvf api.tar.gz api
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: api
-          path: api
+          path: api.tar.gz
 
       - name: Get Package Version
         id: package-version
@@ -66,4 +67,4 @@ jobs:
           title: ${{ steps.package-version.outputs.current-version }}
           prerelease: false
           files: |
-            api
+            api.tar.gz
