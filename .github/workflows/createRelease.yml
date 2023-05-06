@@ -1,0 +1,59 @@
+# github workflow to build project and create new release
+
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.10
+
+      - name: Set up Node.js 16.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+
+      - name: Set up pnpm
+        run: |
+          npm install -g pnpm
+          pnpm install
+
+      - name: Install dependencies
+        run: |
+          pnpm install:api
+          pnpm install:web
+
+      - name: Deploy Web
+        run: |
+          pnpm deploy:web
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: api
+          path: api
+
+      - name: Get Package Version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@main
+
+      - name: Upload Assets
+        id: upload_assets
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: ${{ steps.package-version.outputs.current-version }}
+          title: ${{ steps.package-version.outputs.current-version }}
+          prerelease: false
+          files: |
+            api
