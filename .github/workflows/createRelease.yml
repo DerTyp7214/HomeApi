@@ -23,11 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.8
-
       - name: Set up Node.js 16.x
         uses: actions/setup-node@v2
         with:
@@ -36,11 +31,10 @@ jobs:
       - name: Set up pnpm
         run: |
           npm install -g pnpm
-          pnpm install
 
       - name: Install dependencies
         run: |
-          pnpm install:api
+          pnpm install
           pnpm install:web
 
       - name: Deploy Web
