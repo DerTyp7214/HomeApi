@@ -1,6 +1,6 @@
-from api.auth_bearer import JWTBearer
-from api.consts import Light, LightState, Plug, PlugState, WebSocketMessage
-from api.websocket import broadcast
+from ..auth_bearer import JWTBearer
+from ..consts import Light, LightState, Plug, PlugState, WebSocketMessage
+from ..websocket import broadcast
 from .hue import LightHandler as HueLightHandler
 from .wled import LightHandler as WledLightHandler
 from fastapi import APIRouter, Depends

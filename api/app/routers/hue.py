@@ -3,12 +3,12 @@ from fastapi import APIRouter, Depends, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import requests
-from api.auth_bearer import JWTBearer
+from ..auth_bearer import JWTBearer
 import colorsys
 
-from api.consts import ErrorResponse, HueLightResponse, HueLightState, HuePlugResponse, HuePlugState, Light, LightState, Plug, WebSocketMessage
-from api.websocket import broadcast
-from api.db import user_db
+from ..consts import ErrorResponse, HueLightResponse, HueLightState, HuePlugResponse, HuePlugState, Light, LightState, Plug, WebSocketMessage
+from ..websocket import broadcast
+from ..db import user_db
 
 router = APIRouter(
     tags=["hue"],

@@ -1,7 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 
-from api.consts import HueConfig, WledItem
+from .consts import HueConfig, WledItem
 
 
 class UserSettingsSchema(BaseModel):

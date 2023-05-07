@@ -52,7 +52,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: api
-          path: api.tar.gz
+          path: api
 
       - name: Get Package Version
         id: package-version

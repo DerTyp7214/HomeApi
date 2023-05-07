@@ -2,11 +2,11 @@
 from json import dumps, loads
 from fastapi import WebSocket
 
-from api.auth_bearer import JWTBearer
-from api.auth_handler import decodeJWT
-from api.consts import WebSocketMessage
-from api.db import user_db
-from api.model import UserSchema
+from .auth_bearer import JWTBearer
+from .auth_handler import decodeJWT
+from .consts import WebSocketMessage
+from .db import user_db
+from .model import UserSchema
 
 
 class ConnectionManager:

@@ -1,12 +1,10 @@
 from urllib.parse import unquote
 from fastapi import APIRouter, Depends, Response
 import requests
-from api.auth_bearer import JWTBearer
-from api.db import user_db
-from api.consts import ErrorResponse, Light, LightState, Wled, WledItem, WledState
+from ..auth_bearer import JWTBearer
+from ..db import user_db
+from ..consts import ErrorResponse, Light, LightState, Wled, WledItem, WledState
 from fastapi.responses import JSONResponse
-
-from api.model import UserSchema
 
 router = APIRouter(
     tags=["wled"],

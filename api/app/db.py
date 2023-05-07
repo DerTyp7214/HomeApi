@@ -1,10 +1,10 @@
 from pymongo import MongoClient, database
 from pymongo.collection import Collection
 from typing import Optional
-from api.auth_handler import decodeJWT, hash_password
+from .auth_handler import hash_password, decodeJWT
 
-from api.consts import HueConfig, WledItem
-from api.model import UserSchema
+from .consts import HueConfig, WledItem
+from .model import UserSchema
 
 
 def get_db() -> database.Database:
