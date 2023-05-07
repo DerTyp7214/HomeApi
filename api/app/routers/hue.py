@@ -1,14 +1,19 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import JSONResponse
+from fastapi_sqlalchemy import db
 from pydantic import BaseModel
 import requests
-from ..auth_bearer import JWTBearer
 import colorsys
+from sqlalchemy.orm import Session
 
+
+from ..model import UserSchema
+from ..auth_handler import decodeJWT
+from ..auth_bearer import JWTBearer
 from ..consts import ErrorResponse, HueLightResponse, HueLightState, HuePlugResponse, HuePlugState, Light, LightState, Plug, WebSocketMessage
 from ..websocket import broadcast
-from ..db import user_db
+from ..sql_app import crud
 
 router = APIRouter(
     tags=["hue"],
@@ -17,11 +22,18 @@ router = APIRouter(
 )
 
 
+def user_by_token(db: Session, token: str) -> Optional[UserSchema]:
+    email = (decodeJWT(token) or {}).get("email")
+    return crud.get_user_by_email(db, email) if email else None
+
+
 class LightHandler:
     token: str
+    db: Session
 
-    def __init__(self, token: str):
+    def __init__(self, token: str, db: Session):
         self.token = token
+        self.db = db
 
     def __hsb_to_hsv__(self, hue: float, saturation: float, brightness: float) -> tuple[float, float, float]:
         return (hue/65535*360, saturation/255*100, brightness/255*100)
@@ -83,56 +95,64 @@ class LightHandler:
 
         return Plug.from_dict(new_plug)
 
+    def __user_by_token__(self):
+        return user_by_token(self.db, self.token)
+
+    def __config_by_token__(self):
+        user = user_by_token(self.db, self.token)
+        return user.settings if user else None
+
     def getLightsBride(self, bride_id: str):
-        config = user_db.config_db_by_token(self.token)
-        if config is None:
-            return {}
-        user, host = config.get_hue_bridge_user(
-            bride_id), config.get_hue_bridge_host(bride_id)
-        if host == "" or user == "":
-            return {}
+        user = self.__user_by_token__()
+        bridge = crud.get_hue_bridge_by_id(
+            self.db, user.email, bride_id) if user else None
+        if bridge is None:
+            return None
         lights = requests.get(
-            f"http://{host}/api/{user}/lights")
+            f"http://{bridge.ip}/api/{bridge.user}/lights")
         return lights.json()
 
     def __getLights__(self):
-        config = user_db.config_db_by_token(self.token)
+        config = self.__config_by_token__()
         if config is None:
             return {}
-        bridges = config.get_hue_bridges()
+        bridges = config.hue_bridges
         lights = {}
         for bridge in bridges:
-            lights.update(self.getLightsBride(bridge))
+            lights_bridge = self.getLightsBride(bridge.id)
+            if lights_bridge is not None:
+                lights.update(lights_bridge)
         return lights
 
     def getLights(self):
-        config = user_db.config_db_by_token(self.token)
+        config = self.__config_by_token__()
         if config is None:
             return []
-        bridges = config.get_hue_bridges()
+        bridges = config.hue_bridges
         normalizedLights = []
         for bridge in bridges:
-            lights = self.getLightsBride(bridge)
-            for light in lights:
-                normalized = self.__mapLight__(bridge, lights[light], light)
-                if normalized is not None:
-                    normalizedLights.append(normalized)
+            lights = self.getLightsBride(bridge.id)
+            if lights is not None:
+                for light in lights:
+                    normalized = self.__mapLight__(
+                        bridge.id, lights[light], light)
+                    if normalized is not None:
+                        normalizedLights.append(normalized)
         return normalizedLights
 
     def __getLight__(self, bridge_id: str, id: int):
-        config = user_db.config_db_by_token(self.token)
-        if config is None:
+        db_user = self.__user_by_token__()
+        if db_user is None:
             return None
-        user, host = config.get_hue_bridge_user(
-            bridge_id), config.get_hue_bridge_host(bridge_id)
-        if host == "" or user == "":
+        bridge = crud.get_hue_bridge_by_id(self.db, db_user.email, bridge_id)
+        if bridge is None or bridge.ip == "" or bridge.user == "":
             return None
         light = requests.get(
-            f"http://{host}/api/{user}/lights/{id}")
+            f"http://{bridge.ip}/api/{bridge.user}/lights/{id}")
         return light.json()
 
     def getLight(self, bridge_id: str, id: int):
-        config = user_db.config_db_by_token(self.token)
+        config = self.__config_by_token__()
         if config is None:
             return None
         light = self.__getLight__(bridge_id, id)
@@ -142,9 +162,10 @@ class LightHandler:
     def getPlugsBride(self, bridge_id: str):
         lights = self.getLightsBride(bridge_id)
         plugs = {}
-        for light in lights:
-            if lights[light].get("config", {}).get("archetype") == "plug":
-                plugs[light] = lights[light]
+        if lights is not None:
+            for light in lights:
+                if lights[light].get("config", {}).get("archetype") == "plug":
+                    plugs[light] = lights[light]
         return plugs
 
     def __getPlugs__(self):
@@ -156,15 +177,15 @@ class LightHandler:
         return plugs
 
     def getPlugs(self):
-        config = user_db.config_db_by_token(self.token)
+        config = self.__config_by_token__()
         if config is None:
             return []
-        bridges = config.get_hue_bridges()
+        bridges = config.hue_bridges
         normalizedPlugs = []
         for bridge in bridges:
-            plugs = self.getPlugsBride(bridge)
+            plugs = self.getPlugsBride(bridge.id)
             for plug in plugs:
-                normalized = self.__mapPlug__(bridge, plugs[plug], plug)
+                normalized = self.__mapPlug__(bridge.id, plugs[plug], plug)
                 if normalized is not None:
                     normalizedPlugs.append(normalized)
         return normalizedPlugs
@@ -182,16 +203,15 @@ class LightHandler:
         return self.__mapPlug__(bridge_id, plug, id)
 
     def __setLightState__(self, bridge_id: str, id: int, state: HueLightState):
-        config = user_db.config_db_by_token(self.token)
-        if config is None:
+        user = self.__user_by_token__()
+        if user is None:
             return None
-        user, host = config.get_hue_bridge_user(
-            bridge_id), config.get_hue_bridge_host(bridge_id)
-        if host == "" or user == "":
+        bridge = crud.get_hue_bridge_by_id(self.db, user.email, bridge_id)
+        if bridge is None:
             return None
 
         return requests.put(
-            f"http://{host}/api/{user}/lights/{id}/state", json=state.to_dict())
+            f"http://{bridge.ip}/api/{bridge.user}/lights/{id}/state", json=state.to_dict())
 
     def setLightState(self, bridge_id: str, id: int, state: LightState):
         new_state = HueLightState.from_dict({})
@@ -226,14 +246,15 @@ class HueBody(BaseModel):
 
 @router.put("/config/add", responses={200: {"model": NewBridge}, 400: {"model": str}, 401: {"model": ErrorResponse}})
 def set_config(new_config: HueBody, token: str = Depends(JWTBearer())):
-    config = user_db.config_db_by_token(token)
-    if config is None:
+    user = user_by_token(db.session, token)
+    if user is None:
         return JSONResponse(status_code=401, content={"error": "Invalid token"})
 
-    success, id = config.add_hue_bridge(new_config.host, new_config.user)
+    bridge = crud.add_hue_bridge(
+        db.session, user.email, host=new_config.host, user=new_config.user)
 
-    if success:
-        return JSONResponse(status_code=200, content={"id": id})
+    if bridge is not None:
+        return JSONResponse(status_code=200, content={"id": bridge.id})
 
     return Response(status_code=400, content="Bridge already added")
 
@@ -244,15 +265,15 @@ class UserResponse(BaseModel):
 
 @router.get("/init/{bridge_id}", responses={200: {"model": UserResponse}, 400: {"model": str}, 401: {"model": ErrorResponse}})
 def hue_init(bridge_id: str, token: str = Depends(JWTBearer())):
-    config = user_db.config_db_by_token(token)
-    if config is None:
+    user = user_by_token(db.session, token)
+    if user is None:
         return JSONResponse(status_code=401, content={"error": "Invalid token"})
-    host = config.get_hue_bridge_host(bridge_id)
-    if host == "":
+    bridge = crud.get_hue_bridge_by_id(db.session, user.email, bridge_id)
+    if bridge is None or bridge.ip == "":
         return Response(status_code=400, content="No host set")
 
     userRequest = requests.post(
-        f"http://{host}/api", json={"devicetype": "my_hue_app#home api"})
+        f"http://{bridge.ip}/api", json={"devicetype": "my_hue_app#home api"})
 
     json = userRequest.json()[0]
     error = json.get("error")
@@ -262,39 +283,39 @@ def hue_init(bridge_id: str, token: str = Depends(JWTBearer())):
 
     user = userRequest.json()[0].get("success").get("username")
 
-    config.set_hue_bridge_user(bridge_id, user)
+    crud.update_hue_bridge(db.session, bridge._id, user=user)
 
     return JSONResponse(status_code=200, content={"username": user})
 
 
 @router.delete("/config/{bridge_id}", responses={200: {"model": str}, 401: {"model": ErrorResponse}})
 def delete_config(bridge_id: str, token: str = Depends(JWTBearer())):
-    config = user_db.config_db_by_token(token)
-    if config is None:
+    user = user_by_token(db.session, token)
+    if user is None:
         return JSONResponse(status_code=401, content={"error": "Invalid token"})
-    if config.remove_hue_bridge(bridge_id):
+    if crud.delete_hue_bridge_by_id(db.session, user.email, bridge_id):
         return Response(status_code=200)
     return Response(status_code=400)
 
 
 @router.get("/lights", response_model=dict[str, HueLightResponse])
 def get_lights(token: str = Depends(JWTBearer())):
-    return JSONResponse(status_code=200, content=LightHandler(token).__getLights__())
+    return JSONResponse(status_code=200, content=LightHandler(token, db.session).__getLights__())
 
 
 @router.get("/lights/{bridge_id}", response_model=dict[str, HueLightResponse])
 def get_lights_bridge(bridge_id: str, token: str = Depends(JWTBearer())):
-    return JSONResponse(status_code=200, content=LightHandler(token).getLightsBride(bridge_id))
+    return JSONResponse(status_code=200, content=LightHandler(token, db.session).getLightsBride(bridge_id))
 
 
 @router.get("/lights/{bridge_id}/{id}", response_model=HueLightResponse)
 def get_light(bridge_id: str, id: int, token: str = Depends(JWTBearer())):
-    return JSONResponse(status_code=200, content=LightHandler(token).__getLight__(bridge_id, id))
+    return JSONResponse(status_code=200, content=LightHandler(token, db.session).__getLight__(bridge_id, id))
 
 
 @router.put("/lights/{bridge_id}/{id}/state", response_model=dict)
 async def set_light_state(bridge_id: str, id: int, state: HueLightState, token: str = Depends(JWTBearer())):
-    light_handler = LightHandler(token)
+    light_handler = LightHandler(token, db.session)
     response = light_handler.__setLightState__(bridge_id, id, state)
 
     try:
@@ -318,17 +339,17 @@ async def set_light_state(bridge_id: str, id: int, state: HueLightState, token: 
 
 @router.get("/plugs", response_model=dict[str, HuePlugResponse])
 def get_plugs(token: str = Depends(JWTBearer())):
-    return JSONResponse(status_code=200, content=LightHandler(token).__getPlugs__())
+    return JSONResponse(status_code=200, content=LightHandler(token, db.session).__getPlugs__())
 
 
 @router.get("/plugs/{bridge_id}", response_model=dict[str, HuePlugResponse])
 def get_plugs_bridge(bridge_id: str, token: str = Depends(JWTBearer())):
-    return JSONResponse(status_code=200, content=LightHandler(token).getPlugsBride(bridge_id))
+    return JSONResponse(status_code=200, content=LightHandler(token, db.session).getPlugsBride(bridge_id))
 
 
 @router.get("/plugs/{bridge_id}/{id}", response_model=HuePlugResponse)
 def get_plug(bridge_id: str, id: int, token: str = Depends(JWTBearer())):
-    plug = LightHandler(token).__getPlug__(bridge_id, id)
+    plug = LightHandler(token, db.session).__getPlug__(bridge_id, id)
     if plug is None:
         return Response(status_code=404, content="Plug not found")
 
@@ -337,7 +358,7 @@ def get_plug(bridge_id: str, id: int, token: str = Depends(JWTBearer())):
 
 @router.put("/plugs/{bridge_id}/{id}/state", response_model=dict)
 async def set_plug_state(bridge_id: str, id: int, state: HuePlugState, token: str = Depends(JWTBearer())):
-    light_handler = LightHandler(token)
+    light_handler = LightHandler(token, db.session)
     response = light_handler.__setLightState__(bridge_id, id, state)
 
     try:

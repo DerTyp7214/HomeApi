@@ -6,15 +6,17 @@ from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
+from fastapi_sqlalchemy import DBSessionMiddleware, db
 from starlette.routing import Router
+from decouple import config
 
+from .sql_app import crud
 from .auth_bearer import JWTBearer
 from .model import UserLoginSchema, UserSchema
 
 from .routers import main, hue, wled
 from .consts import ErrorResponse, origins
 from .auth_handler import check_password, decodeJWT, signJWT
-from .db import user_db
 from .websocket import manager
 
 app = FastAPI(
@@ -30,6 +32,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(DBSessionMiddleware, db_url=config(
+    "DATABASE_URL", default="sqlite:///./home_api.db"))
 
 app.include_router(main, prefix="/api")
 app.include_router(hue, prefix="/api/hue")
@@ -39,10 +43,10 @@ dist = os.path.join(os.path.dirname(__file__), "dist")
 
 
 def check_user(user: UserLoginSchema) -> bool:
-    db_user = user_db.get_user_by_email(user.email)
+    db_user = crud.get_user_by_email(db.session, user.email)
     if db_user is None:
         return False
-    if check_password(user.password, db_user.password):
+    if check_password(user.password, db_user.hashed_password):
         return True
     return False
 
@@ -55,11 +59,11 @@ class AuthResponse():
 
 @app.post("/api/auth/signup", responses={200: {"model": AuthResponse}, 409: {"model": ErrorResponse}})
 def signup(user: UserSchema):
-    if user_db.get_user_by_email(user.email) is not None:
+    if crud.get_user_by_email(db.session, user.email) is not None:
         return JSONResponse(status_code=409, content={"error": "Email already exists"})
-    if user_db.get_user(user.username) is not None:
+    if crud.get_user_by_username(db.session, user.username) is not None:
         return JSONResponse(status_code=409, content={"error": "Username already exists"})
-    user_db.add_user(user)
+    crud.create_user(db.session, user)
     return signJWT(user.email)
 
 
@@ -71,7 +75,8 @@ def login(user: UserLoginSchema):
 
 
 def getPackageJson():
-    package_json = os.path.join(os.path.dirname(__file__), "..", "..", "package.json")
+    package_json = os.path.join(os.path.dirname(
+        __file__), "..", "..", "package.json")
     with open(package_json, "r") as f:
         return json.load(f)
 

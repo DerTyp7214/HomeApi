@@ -10,6 +10,7 @@ class UserSettingsSchema(BaseModel):
     wled_ips: list[WledItem] = Field(...)
 
     class Config:
+        orm_mode = True
         schema_extra = {
             "example": {
                 "hue_bridges": [
@@ -33,11 +34,12 @@ class UserSchema(BaseModel):
     username: str = Field(...)
     email: EmailStr = Field(...)
     password: str = Field(...)
-    settings: Optional[UserSettingsSchema] = UserSettingsSchema(
+    settings: UserSettingsSchema = UserSettingsSchema(
         hue_index=0, hue_bridges=[], wled_ips=[]
     )
 
     class Config:
+        orm_mode = True
         schema_extra = {
             "example": {
                 "username": "Username",

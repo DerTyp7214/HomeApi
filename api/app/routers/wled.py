@@ -1,10 +1,16 @@
+from typing import Optional
 from urllib.parse import unquote
 from fastapi import APIRouter, Depends, Response
 import requests
-from ..auth_bearer import JWTBearer
-from ..db import user_db
-from ..consts import ErrorResponse, Light, LightState, Wled, WledItem, WledState
 from fastapi.responses import JSONResponse
+from fastapi_sqlalchemy import db
+from sqlalchemy.orm import Session
+
+from ..auth_handler import decodeJWT
+from ..model import UserSchema
+from ..sql_app import crud
+from ..auth_bearer import JWTBearer
+from ..consts import ErrorResponse, Light, LightState, Wled, WledItem, WledState
 
 router = APIRouter(
     tags=["wled"],
@@ -18,11 +24,25 @@ class WledReponseState(Wled):
     name: str
 
 
+def user_by_token(db: Session, token: str) -> Optional[UserSchema]:
+    email = (decodeJWT(token) or {}).get("email")
+    return crud.get_user_by_email(db, email) if email else None
+
+
 class LightHandler:
     token: str
+    db: Session
 
-    def __init__(self, token: str):
+    def __init__(self, token: str, db: Session):
         self.token = token
+        self.db = db
+
+    def __user_by_token__(self):
+        return user_by_token(self.db, self.token)
+
+    def __config_by_token__(self):
+        user = user_by_token(self.db, self.token)
+        return user.settings if user else None
 
     def __map_light__(self, light: WledReponseState) -> Light:
         colors = []
@@ -47,10 +67,10 @@ class LightHandler:
 
     async def __allLights__(self) -> list[WledReponseState]:
         lights = []
-        config = user_db.config_db_by_token(self.token)
+        config = self.__config_by_token__()
         if config is None:
             return lights
-        for light in config.get_wleds():
+        for light in config.wled_ips:
             lightResponse = self.__getLight__(light.ip)
             if lightResponse is not None:
                 lights.append(lightResponse)
@@ -58,10 +78,10 @@ class LightHandler:
         return lights
 
     def __getLight__(self, ip: str) -> WledReponseState | None:
-        config = user_db.config_db_by_token(self.token)
-        if config is None:
+        user = self.__user_by_token__()
+        if user is None:
             return None
-        wled = config.get_wled(ip)
+        wled = crud.get_wled(self.db, user.email, ip)
         if wled is None:
             return None
 
@@ -112,33 +132,33 @@ class LightHandler:
 
 @router.put("/devices/add", responses={401: {"model": ErrorResponse}, 200: {"model": str}})
 async def add_device(item: WledItem, token: str = Depends(JWTBearer())):
-    config = user_db.config_db_by_token(token)
-    if config is None:
+    user = user_by_token(db.session, token)
+    if user is None:
         return JSONResponse(status_code=401, content={"error": "Invalid token"})
-    config.add_wled(item.ip, item.name)
+    crud.add_wled(db.session, user.email, ip=item.ip, name=item.name)
     return Response(status_code=200)
 
 
 @router.delete("/devices/remove/{ip}", responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}, 200: {"model": str}})
 async def remove_device(ip: str, token: str = Depends(JWTBearer())):
-    config = user_db.config_db_by_token(token)
-    if config is None:
+    user = user_by_token(db.session, token)
+    if user is None:
         return JSONResponse(status_code=401, content={"error": "Invalid token"})
-    if config.remove_wled(unquote(ip)):
+    if crud.delete_wled(db.session, user.email, unquote(ip)):
         return Response(status_code=200)
     return JSONResponse(status_code=404, content={"error": "Light not found"})
 
 
 @router.get("/lights", response_model=list[WledReponseState])
 async def lights(token: str = Depends(JWTBearer())):
-    lights = await LightHandler(token).__allLights__()
+    lights = await LightHandler(token, db.session).__allLights__()
 
     return JSONResponse(status_code=200, content=lights)
 
 
 @router.get("/lights/{ip}", responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}, 200: {"model": WledReponseState}})
 async def light(ip: str, token: str = Depends(JWTBearer())):
-    light = LightHandler(token).__getLight__(ip)
+    light = LightHandler(token, db.session).__getLight__(ip)
 
     if light is None:
         return JSONResponse(status_code=404, content={"error": "Light not found"})
@@ -147,7 +167,7 @@ async def light(ip: str, token: str = Depends(JWTBearer())):
 
 @router.put("/lights/{ip}/state", responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}, 200: {"model": WledReponseState}})
 async def light_state(ip: str, state: WledState, token: str = Depends(JWTBearer())):
-    light_handler = LightHandler(token)
+    light_handler = LightHandler(token, db.session)
     response = light_handler.__setLightState__(ip, state)
 
     light = light_handler.__getLight__(ip)

@@ -39,14 +39,20 @@ class BaseClass(BaseModel):
 
 
 class HueConfig(BaseClass):
-    id: Optional[str]
-    ip: Optional[str]
-    user: Optional[str]
+    id: str
+    ip: str
+    user: str
+
+    class Config:
+        orm_mode = True
 
 
 class WledItem(BaseClass):
     ip: str
     name: str
+
+    class Config:
+        orm_mode = True
 
 
 class WledConfig(BaseClass):

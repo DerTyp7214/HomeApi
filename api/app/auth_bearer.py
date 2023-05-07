@@ -1,13 +1,20 @@
+from typing import Optional
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
+
 
 from .auth_handler import decodeJWT
-from .db import user_db
+from .sql_app.database import SessionLocal
+from .sql_app import crud
 
 
 class JWTBearer(HTTPBearer):
-    def __init__(self, auto_error: bool = True):
+    __db__ = None
+
+    def __init__(self, db: Optional[Session] = None, auto_error: bool = True):
         super(JWTBearer, self).__init__(auto_error=auto_error)
+        self.__db__ = db
 
     async def __call__(self, request: Request):
         credentials: HTTPAuthorizationCredentials | None = await super(JWTBearer, self).__call__(request)
@@ -32,6 +39,9 @@ class JWTBearer(HTTPBearer):
             payload = None
         if payload:
             email = payload.get("email")
-            if email is not None and user_db.get_user_by_email(email) is not None:
+            db = self.__db__ if self.__db__ is not None else SessionLocal()
+            if email is not None and crud.get_user_by_email(db, email) is not None:
                 isTokenValid = True
+            if self.__db__ is None:
+                db.close()
         return isTokenValid

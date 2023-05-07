@@ -2,10 +2,12 @@
 from json import dumps, loads
 from fastapi import WebSocket
 
+
+from .sql_app import crud
+from .sql_app.database import SessionLocal
 from .auth_bearer import JWTBearer
 from .auth_handler import decodeJWT
 from .consts import WebSocketMessage
-from .db import user_db
 from .model import UserSchema
 
 
@@ -17,9 +19,11 @@ class ConnectionManager:
         decoded = decodeJWT(token)
         if decoded is None or JWTBearer().verify_jwt(token) is False:
             return None
-        user = user_db.get_user_by_email(decoded["email"])
+        db = SessionLocal()
+        user = crud.get_user_by_email(db, decoded["email"])
         if user is None:
             return None
+        db.close()
         return user
 
     async def connect(self, websocket: WebSocket, token: str):

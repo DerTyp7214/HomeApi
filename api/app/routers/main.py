@@ -1,10 +1,13 @@
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
+from fastapi_sqlalchemy import db
+from sqlalchemy.orm import Session
+
 from ..auth_bearer import JWTBearer
 from ..consts import Light, LightState, Plug, PlugState, WebSocketMessage
 from ..websocket import broadcast
 from .hue import LightHandler as HueLightHandler
 from .wled import LightHandler as WledLightHandler
-from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
 
 
 router = APIRouter(
@@ -18,11 +21,13 @@ class LightHandler:
     token: str
     hue: HueLightHandler
     wled: WledLightHandler
+    db: Session
 
-    def __init__(self, token: str):
+    def __init__(self, token: str, db: Session):
         self.token = token
-        self.hue = HueLightHandler(token)
-        self.wled = WledLightHandler(token)
+        self.db = db
+        self.hue = HueLightHandler(token, db)
+        self.wled = WledLightHandler(token, db)
 
     def allLights(self) -> list[Light]:
         return [*self.hue.getLights()]
@@ -82,7 +87,7 @@ class LightHandler:
 @router.get("/lights", response_model=list[Light])
 def get_lights(token: str = Depends(JWTBearer())):
     lights = []
-    for light in LightHandler(token).allLights():
+    for light in LightHandler(token, db.session).allLights():
         lights.append(light.to_dict())
 
     return JSONResponse(status_code=200, content=lights)
@@ -90,7 +95,7 @@ def get_lights(token: str = Depends(JWTBearer())):
 
 @router.get("/lights/{id}", response_model=Light)
 def get_light(id: str, token: str = Depends(JWTBearer())):
-    light = LightHandler(token).getLight(id)
+    light = LightHandler(token, db.session).getLight(id)
 
     if light is None:
         return JSONResponse(status_code=404, content={"error": "Light not found"})
@@ -99,7 +104,7 @@ def get_light(id: str, token: str = Depends(JWTBearer())):
 
 @router.put("/lights/{id}/state", response_model=dict)
 async def set_light_state(id: str, state: LightState, token: str = Depends(JWTBearer())):
-    light_handler = LightHandler(token)
+    light_handler = LightHandler(token, db.session)
     response = light_handler.setLightState(id, state)
 
     light = light_handler.getLight(id)
@@ -124,7 +129,7 @@ async def set_light_state(id: str, state: LightState, token: str = Depends(JWTBe
 @router.get("/plugs", response_model=list[Plug])
 def get_plugs(token: str = Depends(JWTBearer())):
     plugs = []
-    for plug in LightHandler(token).allPlugs():
+    for plug in LightHandler(token, db.session).allPlugs():
         plugs.append(plug.to_dict())
 
     return JSONResponse(status_code=200, content=plugs)
@@ -132,7 +137,7 @@ def get_plugs(token: str = Depends(JWTBearer())):
 
 @router.get("/plugs/{id}", response_model=Plug)
 def get_plug(id: str, token: str = Depends(JWTBearer())):
-    plug = LightHandler(token).getPlug(id)
+    plug = LightHandler(token, db.session).getPlug(id)
 
     if plug is None:
         return JSONResponse(status_code=404, content={"error": "Plug not found"})
@@ -141,7 +146,7 @@ def get_plug(id: str, token: str = Depends(JWTBearer())):
 
 @router.put("/plugs/{id}/state", response_model=dict)
 async def set_plug_state(id: str, state: PlugState, token: str = Depends(JWTBearer())):
-    light_handler = LightHandler(token)
+    light_handler = LightHandler(token, db.session)
     response = light_handler.setPlugState(id, state)
 
     plug = light_handler.getPlug(id)

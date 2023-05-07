@@ -8,3 +8,5 @@ python_decouple
 pydantic[email]
 bcrypt
 sqlalchemy
+fastapi-sqlalchemy
+alembic
