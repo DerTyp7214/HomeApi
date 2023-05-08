@@ -48,8 +48,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/DerTyp7214/HomeApi:latest .
-          docker push ghcr.io/DerTyp7214/HomeApi:latest
+          docker build -t ghcr.io/dertyp7214/homeapi:latest .
+          docker push ghcr.io/dertyp7214/homeapi:latest
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
