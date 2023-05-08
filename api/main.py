@@ -2,6 +2,6 @@
 
 if __name__ == "__main__":
     import uvicorn
-    from app import app, consts.port as port
+    from app import app, consts
 
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=consts.port)

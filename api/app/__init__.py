@@ -8,14 +8,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi_sqlalchemy import DBSessionMiddleware, db
 from starlette.routing import Router
-from decouple import config
 
 from .sql_app import crud
 from .auth_bearer import JWTBearer
 from .model import UserLoginSchema, UserSchema
 
 from .routers import main, hue, wled
-from .consts import ErrorResponse, origins
+from .consts import ErrorResponse, origins, SQLALCHEMY_DATABASE_URL
 from .auth_handler import check_password, decodeJWT, signJWT
 from .websocket import manager
 
@@ -32,8 +31,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(DBSessionMiddleware, db_url=config(
-    "DATABASE_URL", default="sqlite:///./home_api.db"))
+app.add_middleware(DBSessionMiddleware, db_url=SQLALCHEMY_DATABASE_URL)
 
 app.include_router(main, prefix="/api")
 app.include_router(hue, prefix="/api/hue")

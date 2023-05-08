@@ -1,10 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from decouple import config
 
-SQLALCHEMY_DATABASE_URL = str(
-    config("DATABASE_URL", default="sqlite:///./home_api.db"))
+from ..consts import SQLALCHEMY_DATABASE_URL
+
 
 connect_args = {}
 

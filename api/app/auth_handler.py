@@ -2,11 +2,8 @@ import time
 import jwt
 import bcrypt
 from typing import Dict
-from decouple import config
 
-
-JWT_SECRET = str(config("secret"))
-JWT_ALGORITHM = str(config("algorithm"))
+from .consts import JWT_SECRET, JWT_ALGORITHM
 
 TOKEN_VERSION = "1.0.0"
 
