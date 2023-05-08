@@ -2,6 +2,9 @@ from dataclasses import dataclass
 from json import dumps, loads
 from typing import Optional
 from pydantic import BaseModel
+from decouple import config
+
+port = int(config("port", default="8000"))
 
 class BaseClass(BaseModel):
     def to_dict(self, recursive: bool = True) -> dict:

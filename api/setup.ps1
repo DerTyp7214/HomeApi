@@ -84,7 +84,7 @@ $MakeSpaces
 $MakeBottom
 
 Write-Host
-Write-Host "This script will install mongodb, python3, and winget." -f Yellow
+Write-Host "This script will install python3, and winget." -f Yellow
 Write-Host "Do you wish to continue?" -f Yellow -NoNewline
 Write-Host " (y/n): " -f White -NoNewline
 $confirmation = Read-Host
@@ -109,106 +109,6 @@ if ($?) {
   Write-Host "Python3 installed" -f Green
 }
 
-$ErrorActionPreference = 'SilentlyContinue'
-Get-ChildItem "C:\Program Files\MongoDB" > $null 2>&1
-
-if ($?) {
-  Write-Host "MongoDB already installed" -f Green
-} else {
-  Write-Host "Installing mongodb" -f Yellow
-  winget install -e --id MongoDB.Server
-  Write-Host "Installing mongodb compass" -f Yellow
-  winget install -e --id MongoDB.Compass.Community
-
-  Write-Host "MongoDB and MongoDB Compass installed" -f Green
-}
-
-$ErrorActionPreference = 'SilentlyContinue'
-mongosh --version > $null 2>&1
-
-if ($?) {
-  Write-Host "mongosh already downloaded and in path" -f Green
-} else {
-  $ErrorActionPreference = 'SilentlyContinue'
-  Get-ChildItem ".\mongodb\bin\mongosh.exe" > $null 2>&1
-  $ErrorActionPreference = 'Continue'
-
-  if ($?) {
-    Write-Host "mongosh already downloaded" -f Green
-    Write-Host "Adding mongosh to path" -f Yellow
-    $env:Path += ";$pwd\mongodb\bin"
-    Write-Host "mongosh added to path" -f Green
-  } else {
-    Write-Host "Downloading mongodb shell" -f Yellow
-    
-    mkdir .\mongodb
-    Invoke-WebRequest https://downloads.mongodb.com/compass/mongosh-1.8.2-win32-x64.zip -OutFile .\mongodb\mongosh.zip
-    Expand-Archive -Path .\mongodb\mongosh.zip -DestinationPath .\mongodb\bin
-    Rename-Item .\mongodb\bin -NewName "bin_old"
-    Move-Item .\mongodb\bin_old\mongosh-1.8.2-win32-x64\* .\mongodb\
-    Remove-Item .\mongodb\bin_old\mongosh-1.8.2-win32-x64 -Recurse
-    Remove-Item .\mongodb\mongosh.zip
-
-    $env:Path += ";$pwd\mongodb\bin"
-
-    Write-Host "MongoDB shell downloaded and added to path" -f Green
-  }
-}
-
-$ErrorActionPreference = 'SilentlyContinue'
-Get-Service -Name "MongoDB" > $null 2>&1
-
-if ($?) {
-  Write-Host "MongoDB already running" -f Green
-} else {
-  Write-Host "Starting MongoDB" -f Yellow
-  Start-Service MongoDB
-
-  Write-Host "Waiting for MongoDB to start" -f Yellow
-  Start-Sleep -s 10
-
-  Write-Host "MongoDB started" -f Green
-}
-
-# check if database and collections exist and create if not
-$ErrorActionPreference = 'SilentlyContinue'
-$output = mongosh --eval "db.getMongo()" --quiet
-
-if ($output -like "mongodb:*") {
-  Write-Host "Mongo is Running" -f Green
-
-  $ErrorActionPreference = 'SilentlyContinue'
-  $output = mongosh --eval "db.getMongo().getDBNames().indexOf('web')" --quiet
-  $ErrorActionPreference = 'Continue'
-
-  if ($output -like "*-1") {
-    Write-Host "Database web does not exist" -f Yellow
-    Write-Host "Creating database web" -f Yellow
-    mongosh web --eval "db.createCollection('config')"
-    Write-Host "Database web created" -f Green
-  } else {
-    Write-Host "Database web already exists" -f Green
-    Write-Host "Checking if collections exist" -f Yellow
-
-    $ErrorActionPreference = 'SilentlyContinue'
-    $output = mongosh web --eval "db.getCollectionNames().indexOf('config')" --quiet
-    $ErrorActionPreference = 'Continue'
-
-    if ($output -like "*-1") {
-      Write-Host "Collection config does not exist" -f Yellow
-      Write-Host "Creating collection config" -f Yellow
-      mongosh web --eval "db.createCollection('config')"
-      Write-Host "Collection config created" -f Green
-    } else {
-      Write-Host "Collection config already exists" -f Green
-    }
-  }
-} else {
-  Write-Host "Mongo is not Running" -f Red
-  exit
-}
-
-
 Write-Host "Installing dependencies" -f Yellow
 
 pip3 install -r requirements.txt
@@ -227,6 +127,7 @@ $substring = $SECRET.Substring($startIndex, $endIndex - $startIndex)
 
 "secret=$substring" | Out-File -FilePath ".env" -Encoding ascii
 "algorithm=$ALGORITHM" | Out-File -FilePath ".env" -Encoding ascii -Append
+"port=8000" | Out-File -FilePath ".env" -Encoding ascii -Append
 
 Write-Host "api-key secret is generated" -f Green
 

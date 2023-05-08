@@ -81,7 +81,7 @@ spaces
 spaces
 bottomBorder
 
-printf "\n\e[33mThis script will install mongodb, python3, and pip3.\nDo you wish to continue?\e[0m" -n
+printf "\n\e[33mThis script will install python3, and pip3.\nDo you wish to continue?\e[0m" -n
 read -p " (y/n): " yn
 
 case $yn in
@@ -176,143 +176,6 @@ else
     fi
 fi
 
-function addMongoRepo() {
-    MONGO_VERSION=6.0
-    currentDirectory=$(pwd)
-
-    if [ -x "$(command -v lsb_release)" ]; then
-        if [ "$(lsb_release -is)" == "Ubuntu" ]; then
-            printGreen "Ubuntu detected."
-            DISTRO="ubuntu"
-            DISTRO_NAME=$(lsb_release -cs)
-        elif [ "$(lsb_release -is)" == "Debian" ]; then
-            printGreen "Debian detected."
-            DISTRO="debian"
-            DISTRO_NAME=$(lsb_release -cs)
-        else
-            printRed "Unsupported Linux distribution."
-            exit 1
-        fi
-    else
-        printRed "Unsupported Linux distribution."
-        exit 1
-    fi
-
-    sudo apt-get update
-    sudo apt-get install gnupg -y
-    
-    sudo mkdir -p /etc/apt/keyrings
-    
-
-    if which curl >/dev/null ; then
-        printYellow "Downloading via curl."
-        curl -fsSL https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg
-    elif which wget >/dev/null ; then
-        printYellow "Downloading via wget."
-        wget -qO- https://www.mongodb.org/static/pgp/server-${MONGO_VERSION}.asc | sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg
-    else
-        printRed "Cannot download, neither wget nor curl is available."
-        exit 1
-    fi
-    
-    cd /etc/apt/sources.list.d/
-    sudo touch mongodb-org-${MONGO_VERSION}.list
-    
-    echo "deb [arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-${MONGO_VERSION}.gpg] https://repo.mongodb.org/apt/${DISTRO} ${DISTRO_NAME}/mongodb-org/${MONGO_VERSION} multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-${MONGO_VERSION}.list
-    sudo apt-get update
-
-    cd $currentDirectory
-}
-
-if which mongod >/dev/null ; then
-    printGreen "mongodb is already installed."
-else
-    if ubuntuOrDebian; then
-        printYellow "Installing mongodb."
-
-        addMongoRepo
-        sudo apt-get install -y mongodb-org
-        sudo apt-get install -y mongodb-org-shell
-        sudo service mongod start
-
-        printGreen "mongodb is installed."
-    else
-        printRed "mongodb is not installed and this script does not support your OS. If your OS can install mongodb, install it and run this script again."
-        exit 1
-    fi
-fi
-
-if which mongosh >/dev/null ; then
-    printGreen "mongosh is already installed."
-else
-    if ubuntuOrDebian; then
-        printYellow "Installing mongosh."
-        
-        addMongoRepo
-        sudo apt-get install -y mongodb-org-shell
-
-        printGreen "mongosh is installed."
-    else
-        printRed "mongosh is not installed and this script does not support your OS. If your OS can install mongosh, install it and run this script again."
-        exit 1
-    fi
-fi
-
-if which nc >/dev/null ; then
-    printGreen "nc is already installed."
-else
-    if ubuntuOrDebian; then
-        printYellow "Installing nc."
-        
-        sudo apt-get install -y netcat
-
-        printGreen "nc is installed."
-    else
-        printRed "nc is not installed and this script does not support your OS. If your OS can install nc, install it and run this script again."
-        exit 1
-    fi
-fi
-
-if ! nc -zvv localhost 27017 2>&1 | grep -q "succeeded!"
-then
-    printYellow "mongodb is not running, starting it."
-    sudo service mongod start
-    
-    count=0
-    while ! nc -zvv localhost 27017 2>&1 | grep -q "succeeded!"; do
-        printYellow "mongodb is not running, waiting 5 seconds."
-        sleep 5
-        count=$((count+1))
-        if [ $count -eq 10 ]; then
-            printRed "mongodb is not running, exiting."
-            exit 1
-        fi
-    done
-else
-    printGreen "mongodb is running."
-fi
-
-if [[ $(mongosh --eval "db.getMongo()" --quiet) == mongodb:* ]]; then
-    printGreen "mongodb is running."
-
-    if [[ $(mongosh --eval "db.getMongo().getDBNames().indexOf('web')" --quiet) != *-1 ]]; then
-        printGreen "database 'web' exists."
-
-        if [[ $(mongosh web --eval "db.getCollectionNames().indexOf('config')" --quiet) != *-1 ]]; then
-            printGreen "collection 'config' exists."
-        else
-            printYellow "collection 'config' does not exist, creating it."
-            mongosh web --eval "db.createCollection('config')" --quiet
-        fi
-    else
-        printYellow "database 'web' does not exist, creating it."
-        mongosh web --eval "db.createCollection('config')" --quiet
-    fi
-else
-    printRed "mongodb is not running."
-    exit 1
-fi
-
 pip3 install -r requirements.txt
 
 printYellow "Generating api-key secret"
@@ -325,10 +188,12 @@ if [[ -f .env ]]; then
     printYellow ".env exists, editing it."
     sed -i "s/secret=.*/secret=$substring/g" .env
     sed -i "s/algorithm=.*/algorithm=$ALGORITHM/g" .env
+    sed -i "s/port=.*/port=8000/g" .env
 else
     printYellow ".env does not exist, creating it."
     echo "secret=$substring" > .env
     echo "algorithm=$ALGORITHM" >> .env
+    echo "port=8000" >> .env
 fi
 
 printGreen "api-key secret is generated."
