@@ -185,10 +185,7 @@ ALGORITHM="HS256"
 substring=$(echo "$SECRET" | sed "s/'//g" | awk '{print $1}' | cut -c 2-)
 
 if [[ -f .env ]]; then
-    printYellow ".env exists, editing it."
-    sed -i "s/secret=.*/secret=$substring/g" .env
-    sed -i "s/algorithm=.*/algorithm=$ALGORITHM/g" .env
-    sed -i "s/port=.*/port=8000/g" .env
+    printGreen ".env exists, skipping."
 else
     printYellow ".env does not exist, creating it."
     echo "secret=$substring" > .env
