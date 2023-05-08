@@ -11,7 +11,7 @@ on:
       version:
         description: 'Version to release'
         required: true
-        default: 'dev'
+        default: 'latest'
 
 permissions: write-all
 
@@ -52,10 +52,18 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
         run: |
           cd api
           docker build -t ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }} .
           docker push ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }}
+
+      - name: Build Docker image
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.version == ''
+        run: |
+          cd api
+          docker build -t ghcr.io/dertyp7214/homeapi:dev .
+          docker push ghcr.io/dertyp7214/homeapi:dev
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
