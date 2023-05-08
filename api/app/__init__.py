@@ -14,7 +14,7 @@ from .auth_bearer import JWTBearer
 from .model import UserLoginSchema, UserSchema
 
 from .routers import main, hue, wled
-from .consts import ErrorResponse, origins, SQLALCHEMY_DATABASE_URL
+from .consts import ErrorResponse, origins, version, SQLALCHEMY_DATABASE_URL
 from .auth_handler import check_password, decodeJWT, signJWT
 from .websocket import manager
 
@@ -73,10 +73,13 @@ def login(user: UserLoginSchema):
 
 
 def getPackageJson():
-    package_json = os.path.join(os.path.dirname(
-        __file__), "..", "..", "package.json")
-    with open(package_json, "r") as f:
-        return json.load(f)
+    try:
+        package_json = os.path.join(os.path.dirname(
+            __file__), "..", "..", "package.json")
+        with open(package_json, "r") as f:
+            return json.load(f)
+    except:
+        return {"version": version}
 
 
 @dataclass

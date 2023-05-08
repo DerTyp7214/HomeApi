@@ -22,8 +22,8 @@ const run = async () => {
   logUpdate.done()
   logUpdate(chalk.yellow('Moving web to server...'))
 
-  fs.removeSync('api/dist')
-  fs.moveSync('web/dist', 'api/dist')
+  fs.removeSync('api/app/dist')
+  fs.moveSync('web/app/dist', 'api/app/dist')
 
   logUpdate(chalk.green('Done!'))
   logUpdate.done()

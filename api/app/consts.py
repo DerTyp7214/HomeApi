@@ -10,6 +10,8 @@ config = Config(RepositoryEnv(DOTENV_FILE))
 
 port = int(config("port", default="8000"))
 
+version = str(config("version", default="1.0.0"))
+
 JWT_SECRET = str(config("secret"))
 JWT_ALGORITHM = str(config("algorithm"))
 
