@@ -2,9 +2,16 @@
 
 Api docs can be found at `/docs`
 
-Create `.env` file in root directory with the following content:
+env variables:
 
 ```env
 secret=<jwt secret>
 algorithm=<jwt algorithm>
+```
+
+optional:
+
+```env
+DATABASE_URL=<database url>
+port=<port>
 ```
