@@ -48,6 +48,7 @@ jobs:
 
       - name: Build Docker image
         run: |
+          cd api
           docker build -t ghcr.io/dertyp7214/homeapi:latest .
           docker push ghcr.io/dertyp7214/homeapi:latest
 
