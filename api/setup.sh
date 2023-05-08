@@ -1,6 +1,9 @@
 #!/bin/bash -i
 
 terminalWidth=$(tput cols)
+if [ -z "$terminalWidth" ]; then
+    terminalWidth=80
+fi
 
 function printGreen() {
     printf "\e[32m$1\e[0m\n"
