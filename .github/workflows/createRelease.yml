@@ -39,6 +39,18 @@ jobs:
           pnpm deploy:web
           tar -czvf api.tar.gz api
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/DerTyp7214/HomeApi:latest .
+          docker push ghcr.io/DerTyp7214/HomeApi:latest
+
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
