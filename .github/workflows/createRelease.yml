@@ -64,6 +64,8 @@ jobs:
           cd api
           docker build -t ghcr.io/dertyp7214/homeapi:dev .
           docker push ghcr.io/dertyp7214/homeapi:dev
+          docker build -t ghcr.io/dertyp7214/homeapi:${{ github.run_id }} .
+          docker push ghcr.io/dertyp7214/homeapi:${{ github.run_id }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
