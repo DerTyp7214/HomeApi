@@ -8,4 +8,6 @@ pydantic[email]
 bcrypt
 sqlalchemy
 fastapi-sqlalchemy
+python-dotenv
+psycopg2
 alembic
