@@ -131,15 +131,8 @@ $substring = $SECRET.Substring($startIndex, $endIndex - $startIndex)
 
 Write-Host "api-key secret is generated" -f Green
 
-Write-Host "Do you want to deploy the web server and start the api server?" -f Yellow -NoNewline
-Write-Host " (y/n): " -NoNewline -f White
-$answer = Read-Host
+Write-Host "Runing migrations" -f Yellow
 
-if ($answer -like "y") {
-  Write-Host "Deploying web server" -f Yellow
-  pnpm deploy:web
-  Write-Host "Web server deployed" -f Green
-  Write-Host "Starting api server" -f Yellow
-  pnpm start:api
-  Write-Host "Api server started" -f Green
-}
+alembic upgrade head
+
+Write-Host "Migrations are run" -f Green

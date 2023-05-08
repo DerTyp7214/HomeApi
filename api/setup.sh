@@ -197,3 +197,9 @@ else
 fi
 
 printGreen "api-key secret is generated."
+
+printYellow "Running migrations"
+
+alembic upgrade head
+
+printGreen "Migrations are run."
