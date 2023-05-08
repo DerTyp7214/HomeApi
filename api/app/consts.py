@@ -2,21 +2,24 @@ from dataclasses import dataclass
 from json import dumps, loads
 from typing import Optional
 from pydantic import BaseModel
-from decouple import Config, RepositoryEnv
-from os import path
+from os import path, environ
+from dotenv import load_dotenv
 
 DOTENV_FILE = path.join(path.dirname(__file__), "..", ".env")
-config = Config(RepositoryEnv(DOTENV_FILE))
 
-port = int(config("port", default="8000"))
+load_dotenv(DOTENV_FILE)
 
-version = str(config("version", default="1.0.0"))
+config = environ.get
+
+port = int(config("port", "8000"))
+
+version = str(config("version", "1.0.0"))
 
 JWT_SECRET = str(config("secret"))
 JWT_ALGORITHM = str(config("algorithm"))
 
 SQLALCHEMY_DATABASE_URL = str(
-    config("DATABASE_URL", default="sqlite:///./home_api.db"))
+    config("DATABASE_URL", "sqlite:///./home_api.db"))
 
 
 class BaseClass(BaseModel):

@@ -4,7 +4,6 @@ uvicorn[standard]
 pymongo[srv]
 websockets
 PyJWT
-python_decouple
 pydantic[email]
 bcrypt
 sqlalchemy
