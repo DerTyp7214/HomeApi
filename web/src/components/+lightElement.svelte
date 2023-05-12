@@ -1,8 +1,9 @@
 <script lang="ts">
-  import InfoIcon from 'svelte-material-icons/Information.svelte'
+  import { Dropdown, DropdownItem, MenuButton } from 'flowbite-svelte'
+  import Color from 'color'
 
   import { setLight } from '../api'
-  import { changeLightnessOfRgb, RGBToHEX } from '../utils'
+  import { changeLightnessOfRgb } from '../utils'
   import Modal, { getModal } from './+modal.svelte'
 
   export let light: Light
@@ -12,6 +13,27 @@
   async function toggleLight() {
     light = await setLight(light.id, { on: !light.on })
   }
+
+  async function changeColor(event: MouseEvent) {
+    event.stopPropagation()
+
+    dropdownOpen = false
+
+    const input = document.getElementById(
+      `color-input-${light.id}`
+    ) as HTMLInputElement
+    input.value = Color.rgb(light.color[0]).hex()
+    input.onchange = async () => {
+      const color = Color(input.value)
+      light = await setLight(light.id, {
+        color: [[color.red(), color.green(), color.blue()]],
+      })
+    }
+    input.onclick = (event) => event.stopPropagation()
+    input.click()
+  }
+
+  let dropdownOpen = false
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -21,21 +43,27 @@
   class="rounded-md w-36 h-36 flex flex-col justify-center items-center m-2 border-2 cursor-pointer hover:border-4 hover:scale-110 relative"
   on:click={toggleLight}
 >
-  <!-- svelte-ignore a11y-click-events-have-key-events -->
-  <div
-    class="absolute top-2 right-2 cursor-pointer"
-    on:click={(event) => {
-      event.preventDefault()
-      event.stopPropagation()
-
-      getModal(`modal-${light.name}`).open()
-    }}
-  >
-    <InfoIcon />
-  </div>
+  <MenuButton
+    class="dots-menu-{light.id} absolute top-2 right-2 dark:text-white"
+    on:click={(e) => e.stopPropagation()}
+    vertical
+  />
   <h1 class="text-xl font-bold select-none">{light.name}</h1>
   <h1 class="text-lg font-bold select-none">{light.on ? 'ON' : 'OFF'}</h1>
+
+  <input type="color" class="w-0 h-0 opacity-0" id="color-input-{light.id}" />
 </div>
+
+<Dropdown triggeredBy=".dots-menu-{light.id}" bind:open={dropdownOpen}>
+  <DropdownItem on:click={changeColor}>Change Color</DropdownItem>
+  <DropdownItem
+    slot="footer"
+    on:click={(event) => {
+      event.stopPropagation()
+      getModal(`modal-${light.name}`).open()
+    }}>Info</DropdownItem
+  >
+</Dropdown>
 
 <Modal id={`modal-${light.name}`}>
   <h1 slot="header" class="text-xl font-bold select-none">

@@ -32,10 +32,7 @@ type Plug = {
 type LightInput = {
   on?: boolean
   brightness?: number
-  color?: {
-    hue?: number
-    saturation?: number
-  }
+  color?: [[number, number, number]]
 }
 
 type PlugInput = {

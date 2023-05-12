@@ -62,7 +62,7 @@
   }
 </script>
 
-<main>
+<main class="dark">
   {#if unauthorized}
     {#if doSignup}
       <form
