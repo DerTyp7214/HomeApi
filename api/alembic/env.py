@@ -1,12 +1,18 @@
+from dotenv import load_dotenv
+import app.sql_app.models as models
 from logging.config import fileConfig
+from os import environ, path
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
 
-from decouple import config as env_config
+DOTENV_FILE = path.join(path.dirname(__file__), "..", ".env")
 
+load_dotenv(DOTENV_FILE)
+
+env_config = environ.get
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -24,7 +30,6 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-import app.sql_app.models as models
 target_metadata = models.Base.metadata
 
 # other values from the config, defined by the needs of env.py,
