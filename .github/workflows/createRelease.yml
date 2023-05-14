@@ -80,8 +80,10 @@ jobs:
         id: release-text
         run: |
           git fetch --tags
-          git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:'- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H) %s' > release.txt
+          git log $(git describe --tags --always --abbrev=0)..HEAD --pretty=format:'- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s' > release.txt
           echo "body=$(cat release.txt)" > $GITHUB_OUTPUT
+
+      - run: echo "${{ steps.release-text.outputs.body }}"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
