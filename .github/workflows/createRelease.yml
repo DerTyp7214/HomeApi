@@ -67,7 +67,7 @@ jobs:
           docker push ghcr.io/dertyp7214/homeapi:dev
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: api
           path: api
