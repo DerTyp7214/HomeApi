@@ -80,7 +80,8 @@ jobs:
         id: release-text
         run: |
           git fetch --tags
-          git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:'- [`%h`](%H) %s' --reverse > release.txt
+          git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:'- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H) %s' > release.txt
+          echo "body=$(cat release.txt)" > $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -88,6 +89,6 @@ jobs:
           files: |
             api.tar.gz
           tag_name: ${{ steps.package-version.outputs.current-version }}
-          body_path: release.txt
+          body: ${{ steps.release-text.outputs.body }}
           draft: false
           prerelease: false
