@@ -20,7 +20,6 @@ run `setup.ps1` to setup the project
 - [node 16+](https://nodejs.org/en/)
 - [python3](https://www.python.org/downloads/)
 - [pip3](https://pip.pypa.io/en/stable/installation/)
-- [monogodb](https://docs.mongodb.com/manual/installation/)
 
 run `pnpm install` to install the dependencies
 
