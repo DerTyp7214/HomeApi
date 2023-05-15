@@ -82,10 +82,9 @@ jobs:
         id: release-text
         run: |
           body="# Release ${{ steps.package-version.outputs.current-version }}"
-          body+="\n\n## Commits since last release\n"
-          body+=$(git log $(git describe --tags --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s')
+          body+="\n\n## Commits\n"
+          body+=$(git log $(git describe --tags --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s (%an)')
           echo -e $body >> release.md
-          cat release.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
