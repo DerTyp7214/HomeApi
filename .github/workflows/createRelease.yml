@@ -83,9 +83,9 @@ jobs:
         run: |
           body="# Release ${{ steps.package-version.outputs.current-version }}"
           body+="\n\n## Commits since last release\n"
-          body+=$(git log $(git describe --tags --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s' | sed 's/[[:space:]]*$//')
-          echo $body
-          echo "body=$body" >> $GITHUB_OUTPUT
+          body+=$(git log $(git describe --tags --always --abbrev=0)..HEAD --pretty=format:'\n- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s')
+          echo $body >> release.md
+          cat release.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -93,6 +93,6 @@ jobs:
           files: |
             api.tar.gz
           tag_name: ${{ steps.package-version.outputs.current-version }}
-          body: ${{ steps.release-text.outputs.body }}
+          body_path: release.md
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.version == '' }}
