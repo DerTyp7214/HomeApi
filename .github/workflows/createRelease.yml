@@ -84,6 +84,7 @@ jobs:
           body="# Release ${{ steps.package-version.outputs.current-version }}"
           body+="\n\n## Commits since last release\n"
           body+=$(git log $(git describe --tags --always --abbrev=0)..HEAD --pretty=format:'- [`%h`](${{ github.server_url }}/${{ github.repository }}/commit/%H): %s')
+          echo $body
           echo "body=$body" >> $GITHUB_OUTPUT
 
       - name: Create Release
