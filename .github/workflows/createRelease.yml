@@ -42,7 +42,7 @@ jobs:
       - name: Set up pnpm
         run: |
           npm install -g pnpm
-          pnpm setup
+          pnpm run setup
 
       - name: Install dependencies
         run: |
