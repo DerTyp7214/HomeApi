@@ -24,6 +24,9 @@ concurrency:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        api: [HomeApiPython, HomeApiRust]
     runs-on: ubuntu-latest
     if: ${{ github.event.head_commit.author.name != 'dependabot[bot]' && github.event_name != 'workflow_dispatch' }}
     steps:
@@ -48,8 +51,8 @@ jobs:
 
       - name: Deploy Web
         run: |
-          pnpm deploy:web
-          tar -czvf api.tar.gz api
+          pnpm deploy:web --path ${{ matrix.api }}
+          tar -czvf api.tar.gz ${{ matrix.api }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -61,14 +64,14 @@ jobs:
       - name: Build Docker image
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
         run: |
-          cd api
+          cd ${{ matrix.api }}
           docker build -t ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }} .
           docker push ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }}
 
       - name: Build Docker image
         if: github.event_name != 'workflow_dispatch' || github.event.inputs.version == ''
         run: |
-          cd api
+          cd ${{ matrix.api }}
           docker build -t ghcr.io/dertyp7214/homeapi:dev .
           docker push ghcr.io/dertyp7214/homeapi:dev
 
@@ -76,7 +79,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: api
-          path: api
+          path: ${{ matrix.api }}
 
       - name: Get Package Version
         id: package-version
