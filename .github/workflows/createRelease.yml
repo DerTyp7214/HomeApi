@@ -26,7 +26,11 @@ jobs:
   build:
     strategy:
       matrix:
-        api: [HomeApiPython, HomeApiRust]
+        api:
+          [
+            { path: HomeApiPython, env: python },
+            { path: HomeApiRust, env: rust },
+          ]
     runs-on: ubuntu-latest
     if: ${{ github.event.head_commit.author.name != 'dependabot[bot]' || github.event_name == 'workflow_dispatch' }}
     steps:
@@ -51,8 +55,8 @@ jobs:
 
       - name: Deploy Web
         run: |
-          pnpm deploy:web --path ${{ matrix.api }}
-          tar -czvf api.tar.gz ${{ matrix.api }}
+          pnpm deploy:web --path ${{ matrix.api.path }}
+          tar -czvf api.tar.gz ${{ matrix.api.path }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -64,22 +68,22 @@ jobs:
       - name: Build Docker image
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
         run: |
-          cd ${{ matrix.api }}
-          docker build -t ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }} .
-          docker push ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }}
+          cd ${{ matrix.api.path }}
+          docker build -t ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }}-${{ matrix.api.env }} .
+          docker push ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }}-${{ matrix.api.env }}
 
       - name: Build Docker image
         if: github.event_name != 'workflow_dispatch' || github.event.inputs.version == ''
         run: |
-          cd ${{ matrix.api }}
-          docker build -t ghcr.io/dertyp7214/homeapi:dev .
-          docker push ghcr.io/dertyp7214/homeapi:dev
+          cd ${{ matrix.api.path }}
+          docker build -t ghcr.io/dertyp7214/homeapi:dev-${{ matrix.api.env }} .
+          docker push ghcr.io/dertyp7214/homeapi:dev-${{ matrix.api.env }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: api
-          path: ${{ matrix.api }}
+          path: ${{ matrix.api.path }}
 
       - name: Get Package Version
         id: package-version
@@ -97,7 +101,7 @@ jobs:
         with:
           files: |
             api.tar.gz
-          tag_name: ${{ steps.package-version.outputs.current-version }}
+          tag_name: ${{ steps.package-version.outputs.current-version }}-${{ matrix.api.env }}
           body_path: release.md
           draft: false
           prerelease: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.version == '' }}
