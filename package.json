@@ -6,9 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "setup": "git submodule update --init --recursive",
-    "install:api": "pip3 install -r api/requirements.txt && cd api && alembic upgrade head && cd ..",
-    "dev:api": "cd api && uvicorn app:app --reload --host 0.0.0.0",
-    "start:api": "python api/main.py",
+    "install:api": "ts-node-esm scripts/api.ts --install",
+    "dev:api": "ts-node-esm scripts/api.ts --dev",
+    "start:api": "ts-node-esm scripts/api.ts --start",
     "install:web": "cd web && pnpm install && cd ..",
     "dev:web": "cd web && pnpm run dev && cd ..",
     "build:web": "cd web && pnpm run build && cd ..",

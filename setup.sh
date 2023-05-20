@@ -257,14 +257,26 @@ SECRET=$(python3 -c "import os; import binascii; print(binascii.hexlify(os.urand
 ALGORITHM="HS256"
 substring=$(echo "$SECRET" | sed "s/'//g" | awk '{print $1}' | cut -c 2-)
 
-if [[ -f api/.env ]]; then
-    printYellow "api/.env exists, editing it."
-    sed -i "s/secret=.*/secret=$substring/g" api/.env
-    sed -i "s/algorithm=.*/algorithm=$ALGORITHM/g" api/.env
+if [[ -f HomeApiPython/.env ]]; then
+    printYellow "HomeApiPython/.env exists, editing it."
+    sed -i "s/secret=.*/secret=$substring/g" HomeApiPython/.env
+    sed -i "s/algorithm=.*/algorithm=$ALGORITHM/g" HomeApiPython/.env
+elif [[ -f HomeApiRust/.env ]]; then
+    printYellow "HomeApiPython/.env exists, editing it."
+    sed -i "s/secret=.*/secret=$substring/g" HomeApiPython/.env
+    sed -i "s/algorithm=.*/algorithm=$ALGORITHM/g" HomeApiPython/.env
+elif [[ -f HomeApiPython ]]; then
+    printYellow "HomeApiPython exists, creating env."
+    echo "secret=$substring" > HomeApiPython/.env
+    echo "algorithm=$ALGORITHM" >> HomeApiPython/.env
+elif [[ -f HomeApiRust ]]; then
+    printYellow "HomeApiRust exists, creating env."
+    echo "secret=$substring" > HomeApiRust/.env
+    echo "algorithm=$ALGORITHM" >> HomeApiRust/.env
 else
-    printYellow "api/.env does not exist, creating it."
-    echo "secret=$substring" > api/.env
-    echo "algorithm=$ALGORITHM" >> api/.env
+    printRed "HomeApiPython or HomeApiRust does not exist."
+    printRed "Please setup the submodules."
+    exit 1
 fi
 
 printGreen "api-key secret is generated."

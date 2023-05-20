@@ -163,8 +163,16 @@ $startIndex = $SECRET.IndexOf($prefix) + $prefix.Length
 $endIndex = $SECRET.IndexOf($suffix, $startIndex)
 $substring = $SECRET.Substring($startIndex, $endIndex - $startIndex)
 
-"secret=$substring" | Out-File -FilePath "api\.env" -Encoding ascii
-"algorithm=$ALGORITHM" | Out-File -FilePath "api\.env" -Encoding ascii -Append
+if (Test-Path "HomeApiPython") {
+  "secret=$substring" | Out-File -FilePath "HomeApiPython\.env" -Encoding ascii
+  "algorithm=$ALGORITHM" | Out-File -FilePath "HomeApiPython\.env" -Encoding ascii -Append
+} else if (Test-Path "HomeApiRust") {
+  "secret=$substring" | Out-File -FilePath "HomeApiRust\.env" -Encoding ascii
+  "algorithm=$ALGORITHM" | Out-File -FilePath "HomeApiRust\.env" -Encoding ascii -Append
+} else {
+  Write-Host "HomeApiPython or HomeApiRust not found" -f Red
+  exit
+}
 
 Write-Host "api-key secret is generated" -f Green
 Write-Host "Setup is complete\n" -f Green
