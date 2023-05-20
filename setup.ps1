@@ -145,6 +145,8 @@ if ($?) {
 
 Write-Host "Installing dependencies" -f Yellow
 
+pnpm run setup
+
 pnpm install
 pnpm install:api
 pnpm install:web

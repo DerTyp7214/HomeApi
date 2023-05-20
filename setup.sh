@@ -244,6 +244,8 @@ fi
 
 printYellow "Installing dependencies."
 
+pnpm run setup
+
 pnpm install
 pnpm install:api
 pnpm install:web

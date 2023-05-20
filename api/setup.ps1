@@ -130,9 +130,3 @@ $substring = $SECRET.Substring($startIndex, $endIndex - $startIndex)
 "port=8000" | Out-File -FilePath ".env" -Encoding ascii -Append
 
 Write-Host "api-key secret is generated" -f Green
-
-Write-Host "Runing migrations" -f Yellow
-
-alembic upgrade head
-
-Write-Host "Migrations are run" -f Green

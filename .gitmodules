@@ -1,0 +1,3 @@
+[submodule "HomeApiRust"]
+	path = HomeApiRust
+	url = git@github.com:DerTyp7214/HomeApiRust.git
