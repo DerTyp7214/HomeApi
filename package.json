@@ -9,6 +9,7 @@
     "install:api": "ts-node-esm scripts/api.ts --install",
     "dev:api": "ts-node-esm scripts/api.ts --dev",
     "start:api": "ts-node-esm scripts/api.ts --start",
+    "build:api": "ts-node-esm scripts/api.ts --build",
     "install:web": "cd web && pnpm install && cd ..",
     "dev:web": "cd web && pnpm run dev && cd ..",
     "build:web": "cd web && pnpm run build && cd ..",

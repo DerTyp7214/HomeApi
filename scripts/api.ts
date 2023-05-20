@@ -21,6 +21,11 @@ const devCommands: CommandsObject = {
 
 const installCommands: CommandsObject = {
   python: 'pip3 install -r requirements.txt',
+  rust: 'echo "No install command"',
+}
+
+const buildCommands: CommandsObject = {
+  python: 'echo "No build command"',
   rust: 'cargo build --release',
 }
 
@@ -29,6 +34,8 @@ const start = () => startCommands[env] ?? ''
 const dev = () => devCommands[env] ?? ''
 
 const install = () => installCommands[env] ?? ''
+
+const build = () => buildCommands[env] ?? ''
 
 const possibleApiPaths: [string, Env][] = [
   ['HomeApiPython', 'python'],
@@ -48,6 +55,7 @@ const commands: {
   '--start': { command: start, options: { shell: true, stdio: 'inherit' } },
   '--dev': { command: dev, options: { shell: true, stdio: 'inherit' } },
   '--install': { command: install, options: { shell: true } },
+  '--build': { command: build, options: { shell: true, stdio: 'inherit' } },
 }
 
 function getApiPath() {
