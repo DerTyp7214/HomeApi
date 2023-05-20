@@ -15,6 +15,11 @@ on:
         description: 'Version to release'
         required: true
         default: 'latest'
+      release:
+        description: 'Is this a release?'
+        required: false
+        type: boolean
+        default: false
 
 permissions: write-all
 
@@ -82,7 +87,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: api
+          name: api-${{ matrix.api.env }}
           path: ${{ matrix.api.path }}
 
       - name: Get Package Version
@@ -104,4 +109,4 @@ jobs:
           tag_name: ${{ steps.package-version.outputs.current-version }}-${{ matrix.api.env }}
           body_path: release.md
           draft: false
-          prerelease: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.version == '' }}
+          prerelease: ${{ github.event.inputs.release }}
