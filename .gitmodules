@@ -1,3 +1,6 @@
 [submodule "HomeApiRust"]
 	path = HomeApiRust
 	url = git@github.com:DerTyp7214/HomeApiRust.git
+[submodule "HomeApiPython"]
+	path = HomeApiPython
+	url = git@github.com:DerTyp7214/HomeApiPython.git
