@@ -42,7 +42,7 @@ const run = async () => {
   const distPath = join(path!, 'dist')
 
   fs.removeSync(distPath)
-  fs.moveSync('web/dist', distPath)
+  fs.moveSync('HomeApiWeb/dist', distPath)
 
   logUpdate(chalk.green('Done!'))
   logUpdate.done()

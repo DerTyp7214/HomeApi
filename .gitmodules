@@ -4,3 +4,6 @@
 [submodule "HomeApiPython"]
 	path = HomeApiPython
 	url = git@github.com:DerTyp7214/HomeApiPython.git
+[submodule "HomeApiWeb"]
+	path = HomeApiWeb
+	url = git@github.com:DerTyp7214/HomeApiWeb.git

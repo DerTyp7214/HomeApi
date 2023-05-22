@@ -1,6 +1,6 @@
 {
   "name": "home-api",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "type": "module",
   "scripts": {
@@ -10,11 +10,11 @@
     "dev:api": "ts-node-esm scripts/api.ts --dev",
     "start:api": "ts-node-esm scripts/api.ts --start",
     "build:api": "ts-node-esm scripts/api.ts --build",
-    "install:web": "cd web && pnpm install && cd ..",
-    "dev:web": "cd web && pnpm run dev && cd ..",
-    "build:web": "cd web && pnpm run build && cd ..",
-    "preview:web": "cd web && pnpm run preview && cd ..",
-    "check:web": "cd web && pnpm run check && cd ..",
+    "install:web": "ts-node-esm scripts/web.ts --install",
+    "dev:web": "ts-node-esm scripts/web.ts --dev",
+    "build:web": "ts-node-esm scripts/web.ts --build",
+    "preview:web": "ts-node-esm scripts/web.ts --preview",
+    "check:web": "ts-node-esm scripts/web.ts --check",
     "deploy:web": "ts-node-esm scripts/deploy.ts"
   },
   "keywords": [],
