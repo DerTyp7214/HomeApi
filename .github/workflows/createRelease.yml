@@ -110,7 +110,7 @@ jobs:
           tag_name: ${{ steps.package-version.outputs.current-version }}-${{ github.event.inputs.version }}-${{ matrix.api.env }}
           body_path: release.md
           draft: false
-          prerelease: ${{ github.event.inputs.isRelease != true }}
+          prerelease: ${{ github.event.inputs.isRelease != 'true' }}
 
       - name: Create Release
         if: github.event_name != 'workflow_dispatch' || github.event.inputs.version == ''
@@ -121,4 +121,4 @@ jobs:
           tag_name: ${{ steps.package-version.outputs.current-version }}-${{ matrix.api.env }}
           body_path: release.md
           draft: false
-          prerelease: ${{ github.event.inputs.isRelease != true }}
+          prerelease: ${{ github.event.inputs.isRelease != 'true' }}
