@@ -39,13 +39,13 @@ jobs:
             {
               path: HomeApiPython,
               env: python,
-              cache-path: ~/.cache/pip,
+              cache-paths: '~/.cache/pip',
               hash-files: '**/requirements.txt',
             },
             {
               path: HomeApiRust,
               env: rust,
-              cache-path: target,
+              cache-paths: "./HomeApiRust/target\n~/.cargo",
               hash-files: '**/Cargo.lock',
             },
           ]
@@ -61,7 +61,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ${{ matrix.api.cache-path }}
+            ${{ matrix.api.cache-paths }}
             node_modules
             ~/.pnpm-store
             HomeApiWeb/node_modules
