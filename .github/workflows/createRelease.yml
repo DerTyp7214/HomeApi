@@ -45,7 +45,7 @@ jobs:
             {
               path: HomeApiRust,
               env: rust,
-              cache-path: ~/.cargo,
+              cache-path: target,
               hash-files: '**/Cargo.lock',
             },
           ]
@@ -60,8 +60,11 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         with:
-          path: ${{ matrix.api.cache-path }}
-          key: ${{ runner.os }}-${{ matrix.api.path }}-${{ hashFiles(matrix.api.hash-files) }}
+          path: |
+            ${{ matrix.api.cache-path }}
+            node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-${{ matrix.api.path }}-${{ hashFiles(matrix.api.hash-files) }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-${{ matrix.api.path }}-
 
       - name: Set up Node.js LTS
