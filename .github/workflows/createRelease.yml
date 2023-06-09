@@ -62,10 +62,10 @@ jobs:
         with:
           path: |
             ${{ matrix.api.cache-paths }}
-            node_modules
+            ./node_modules
             ~/.pnpm-store
-            HomeApiWeb/node_modules
-          key: ${{ runner.os }}-${{ matrix.api.path }}-${{ hashFiles(matrix.api.hash-files) }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+            ./HomeApiWeb/node_modules
+          key: ${{ runner.os }}-${{ matrix.api.path }}-${{ hashFiles(matrix.api.hash-files, '**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-${{ matrix.api.path }}-
 
       - name: Set up Node.js LTS
