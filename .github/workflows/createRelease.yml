@@ -33,8 +33,18 @@ jobs:
       matrix:
         api:
           [
-            { path: HomeApiPython, env: python },
-            { path: HomeApiRust, env: rust },
+            {
+              path: HomeApiPython,
+              env: python,
+              cache-path: ~/.cache/pip,
+              hash-files: '**/requirements.txt',
+            },
+            {
+              path: HomeApiRust,
+              env: rust,
+              cache-path: ~/.cargo,
+              hash-files: '**/Cargo.lock',
+            },
           ]
     runs-on: ubuntu-latest
     if: ${{ github.event.head_commit.author.name != 'dependabot[bot]' || github.event_name == 'workflow_dispatch' }}
@@ -43,6 +53,13 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+
+      - name: Cache .cargo directory
+        uses: actions/cache@v3
+        with:
+          path: ${{ matrix.api.cache-path }}
+          key: ${{ runner.os }}-${{ matrix.api.path }}-${{ hashFiles(matrix.api.hash-files) }}
+          restore-keys: ${{ runner.os }}-${{ matrix.api.path }}-
 
       - name: Set up Node.js LTS
         uses: actions/setup-node@v3
@@ -74,6 +91,10 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
         run: |
           cd ${{ matrix.api.path }}
+          if [ -f pre_build.sh ]; then
+            chmod +x pre_build.sh  
+            ./pre_build.sh
+          fi
           docker build -t ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }}-${{ matrix.api.env }} .
           docker push ghcr.io/dertyp7214/homeapi:${{ github.event.inputs.version }}-${{ matrix.api.env }}
 
@@ -81,6 +102,10 @@ jobs:
         if: github.event_name != 'workflow_dispatch' || github.event.inputs.version == ''
         run: |
           cd ${{ matrix.api.path }}
+          if [ -f pre_build.sh ]; then
+            chmod +x pre_build.sh  
+            ./pre_build.sh
+          fi
           docker build -t ghcr.io/dertyp7214/homeapi:dev-${{ matrix.api.env }} .
           docker push ghcr.io/dertyp7214/homeapi:dev-${{ matrix.api.env }}
 
