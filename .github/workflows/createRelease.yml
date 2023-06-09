@@ -57,7 +57,7 @@ jobs:
           fetch-depth: 0
           submodules: true
 
-      - name: Cache .cargo directory
+      - name: Cache
         uses: actions/cache@v3
         with:
           path: ${{ matrix.api.cache-path }}
