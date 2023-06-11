@@ -65,6 +65,7 @@ jobs:
             ./node_modules
             ~/.pnpm-store
             ./HomeApiWeb/node_modules
+            ./HomeApiWeb/.svelte-kit
           key: ${{ runner.os }}-${{ matrix.api.path }}-${{ hashFiles(matrix.api.hash-files, '**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-${{ matrix.api.path }}-
 
