@@ -126,7 +126,7 @@ jobs:
         with:
           name: api-${{ matrix.api.env }}
           path: |
-            ${{ matrix.api.filesToTar }}
+            ${{ matrix.api.artifacts }}
 
       - name: Get Package Version
         id: package-version
