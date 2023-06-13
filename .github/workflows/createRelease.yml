@@ -42,6 +42,7 @@ jobs:
               cache-paths: '~/.cache/pip',
               hash-files: '**/requirements.txt',
               filesToTar: 'HomeApiPython',
+              artifacts: 'HomeApiPython',
             },
             {
               path: HomeApiRust,
@@ -49,6 +50,7 @@ jobs:
               cache-paths: "./HomeApiRust/target\n~/.cargo",
               hash-files: '**/Cargo.lock',
               filesToTar: 'HomeApiRust/migrations HomeApiRust/target/release/home_api_rust* HomeApiRust/diesel.toml',
+              artifacts: "HomeApiRust/migrations\nHomeApiRust/target/release/home_api_rust*\nHomeApiRust/diesel.toml",
             },
           ]
     runs-on: ubuntu-latest
@@ -123,7 +125,8 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: api-${{ matrix.api.env }}
-          path: ${{ matrix.api.filesToTar }}
+          path: |
+            ${{ matrix.api.filesToTar }}
 
       - name: Get Package Version
         id: package-version
