@@ -48,7 +48,7 @@ jobs:
               env: rust,
               cache-paths: "./HomeApiRust/target\n~/.cargo",
               hash-files: '**/Cargo.lock',
-              filesToTar: 'HomeApiRust/migrations HomeApiRust/target/release/ HomeApiRust/diesel.toml',
+              filesToTar: 'HomeApiRust/migrations HomeApiRust/target/release/home_api_rust* HomeApiRust/diesel.toml',
             },
           ]
     runs-on: ubuntu-latest
