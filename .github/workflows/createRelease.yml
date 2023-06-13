@@ -41,12 +41,14 @@ jobs:
               env: python,
               cache-paths: '~/.cache/pip',
               hash-files: '**/requirements.txt',
+              filesToTar: 'HomeApiPython',
             },
             {
               path: HomeApiRust,
               env: rust,
               cache-paths: "./HomeApiRust/target\n~/.cargo",
               hash-files: '**/Cargo.lock',
+              filesToTar: 'HomeApiRust/migrations HomeApiRust/target/release/ HomeApiRust/diesel.toml',
             },
           ]
     runs-on: ubuntu-latest
@@ -86,7 +88,7 @@ jobs:
       - name: Deploy Web
         run: |
           pnpm deploy:web --path ${{ matrix.api.path }}
-          tar -czvf api.tar.gz ${{ matrix.api.path }}
+          tar -czvf api.tar.gz ${{ matrix.api.filesToTar }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
