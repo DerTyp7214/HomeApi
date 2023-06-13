@@ -49,7 +49,7 @@ jobs:
               env: rust,
               cache-paths: "./HomeApiRust/target\n~/.cargo\n~/.rustup\n~/.rustup-toolc",
               hash-files: '**/Cargo.lock',
-              filesToTar: 'migrations home_api_rust diesel.toml',
+              filesToTar: 'migrations home_api_rust diesel diesel.toml',
               artifacts: "HomeApiRust/migrations\nHomeApiRust/home_api_rust\nHomeApiRust/diesel.toml",
             },
           ]
