@@ -41,8 +41,8 @@ jobs:
               env: python,
               cache-paths: '~/.cache/pip',
               hash-files: '**/requirements.txt',
-              filesToTar: 'HomeApiPython',
-              artifacts: '.',
+              filesToTar: '.',
+              artifacts: 'HomeApiPython',
             },
             {
               path: HomeApiRust,
