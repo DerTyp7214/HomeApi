@@ -87,13 +87,6 @@ jobs:
           pnpm install
           pnpm install:web
 
-      - name: Deploy Web
-        run: |
-          pnpm deploy:web --path ${{ matrix.api.path }}
-          cd ${{ matrix.api.path }}
-          tar -czvf api.tar.gz ${{ matrix.api.filesToTar }}
-          mv api.tar.gz ../api.tar.gz
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -122,6 +115,13 @@ jobs:
           fi
           docker build -t ghcr.io/dertyp7214/homeapi:dev-${{ matrix.api.env }} .
           docker push ghcr.io/dertyp7214/homeapi:dev-${{ matrix.api.env }}
+
+      - name: Deploy Web
+        run: |
+          pnpm deploy:web --path ${{ matrix.api.path }}
+          cd ${{ matrix.api.path }}
+          tar -czvf api.tar.gz ${{ matrix.api.filesToTar }}
+          mv api.tar.gz ../api.tar.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
