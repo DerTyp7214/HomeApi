@@ -123,7 +123,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: api-${{ matrix.api.env }}
-          path: ${{ matrix.api.path }}
+          path: ${{ matrix.api.filesToTar }}
 
       - name: Get Package Version
         id: package-version
