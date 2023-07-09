@@ -16,18 +16,12 @@ jobs:
         run: |
           rm -rf node_modules
           rm -rf pnpm-lock.yaml
-          rm -rf web/node_modules
-          rm -rf web/pnpm-lock.yaml
           pnpm install --force
-          cd HomeApiWeb
-          pnpm install --force
-          cd ..
 
       - name: Commit lockfile
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git add pnpm-lock.yaml
-          git add HomeApiWeb/pnpm-lock.yaml
           git commit -m "Generate pnpm-lock.yaml"
           git push
