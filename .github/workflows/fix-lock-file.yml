@@ -2,6 +2,8 @@ name: Create Lockfile
 
 on: workflow_dispatch
 
+permissions: write-all
+
 jobs:
   create-lockfile:
     runs-on: ubuntu-latest
