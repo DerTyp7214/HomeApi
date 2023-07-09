@@ -61,17 +61,31 @@ jobs:
           fetch-depth: 0
           submodules: true
 
-      - name: Cache
+      - name: Cache Matrix files
         uses: actions/cache@v3
         with:
           path: |
             ${{ matrix.api.cache-paths }}
+          key: ${{ runner.os }}-${{ matrix.api.path }}-${{ hashFiles(matrix.api.hash-files) }}
+          restore-keys: ${{ runner.os }}-${{ matrix.api.path }}-
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: |
             ./node_modules
             ~/.pnpm-store
+          key: ${{ runner.os }}-node-${{ hashFiles('./pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-node-
+
+      - name: Cache Web Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: |
             ./HomeApiWeb/node_modules
             ./HomeApiWeb/.svelte-kit
-          key: ${{ runner.os }}-${{ matrix.api.path }}-${{ hashFiles(matrix.api.hash-files, '**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-${{ matrix.api.path }}-
+          key: ${{ runner.os }}-web-${{ hashFiles('./HomeApiWeb/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-web-
 
       - name: Set up Node.js LTS
         uses: actions/setup-node@v3
