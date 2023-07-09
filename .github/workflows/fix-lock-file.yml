@@ -19,7 +19,7 @@ jobs:
           rm -rf web/node_modules
           rm -rf web/pnpm-lock.yaml
           pnpm install --force
-          cd web
+          cd HomeApiWeb
           pnpm install --force
           cd ..
 
