@@ -23,7 +23,7 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
     "@types/noble": "^0.0.41",
-    "@types/node": "^20.5.0",
+    "@types/node": "^20.6.2",
     "ts-node": "^10.9.1"
   },
   "dependencies": {
