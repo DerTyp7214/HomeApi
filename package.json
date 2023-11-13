@@ -22,7 +22,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
-    "@types/noble": "^0.0.41",
+    "@types/noble": "^0.0.44",
     "@types/node": "^20.5.0",
     "ts-node": "^10.9.1"
   },
